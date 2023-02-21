@@ -2,17 +2,19 @@ import pygame
 import sys
 from pygame.locals import *
 import ctypes
+import copy
+import time
 
 
 # Window display variables -------------------------------------------
 def convert_to_supported_resolution(x, y):
-    res_x = int(x / 8) * 8
-    res_y = int(y / 8) * 8
+    res_x = (x // 8) * 8
+    res_y = (y // 8) * 8
     print("Window resolution:", res_x, res_y)
     return res_x, res_y
 
 
-disp_x, disp_y = convert_to_supported_resolution(900, 900)
+disp_x, disp_y = convert_to_supported_resolution(1000, 700)
 ctypes.windll.user32.SetProcessDPIAware()
 window = pygame.display.set_mode((disp_x, disp_y))
 pygame.display.set_caption("Chess")
@@ -29,46 +31,81 @@ scale = 0.8
 DEFAULT_tup = (-500, -500)
 DEFAULT_int = -500
 
-
 # Import of Images
-b_img = pygame.image.load('images\\boardaswhite.png').convert()
-board_img = pygame.transform.scale(b_img, (board_size, board_size)).convert()
+dark_sqr = pygame.image.load('images\\darksqr.png').convert_alpha()
+dark_sqr = pygame.transform.smoothscale(dark_sqr, (square_size, square_size)).convert_alpha()
+light_sqr = pygame.image.load('images\\lightsqr.png').convert_alpha()
+light_sqr = pygame.transform.smoothscale(light_sqr, (square_size, square_size)).convert_alpha()
 w_p_img = pygame.image.load('images\\wpawn.png').convert_alpha()
-w_pawn_img = pygame.transform.smoothscale(w_p_img, (square_size*0.87, square_size*0.87)).convert_alpha()
+w_pawn_img = pygame.transform.smoothscale(w_p_img, (square_size * 0.87, square_size * 0.87)).convert_alpha()
 b_p_img = pygame.image.load('images\\bpawn.png').convert_alpha()
-b_pawn_img = pygame.transform.smoothscale(b_p_img, (square_size*0.87, square_size*0.87)).convert_alpha()
+b_pawn_img = pygame.transform.smoothscale(b_p_img, (square_size * 0.87, square_size * 0.87)).convert_alpha()
 w_n_img = pygame.image.load('images\\wknight.png').convert_alpha()
-w_knight_img = pygame.transform.smoothscale(w_n_img, (square_size*scale, square_size*scale)).convert_alpha()
+w_knight_img = pygame.transform.smoothscale(w_n_img, (square_size * scale, square_size * scale)).convert_alpha()
 b_n_img = pygame.image.load('images\\bknight.png').convert_alpha()
-b_knight_img = pygame.transform.smoothscale(b_n_img, (square_size*scale, square_size*scale)).convert_alpha()
+b_knight_img = pygame.transform.smoothscale(b_n_img, (square_size * scale, square_size * scale)).convert_alpha()
 w_b_img = pygame.image.load('images\\wbishop.png').convert_alpha()
-w_bishop_img = pygame.transform.smoothscale(w_b_img, (square_size*scale, square_size*scale)).convert_alpha()
+w_bishop_img = pygame.transform.smoothscale(w_b_img, (square_size * scale, square_size * scale)).convert_alpha()
 b_b_img = pygame.image.load('images\\bbishop.png').convert_alpha()
-b_bishop_img = pygame.transform.smoothscale(b_b_img, (square_size*scale, square_size*scale)).convert_alpha()
+b_bishop_img = pygame.transform.smoothscale(b_b_img, (square_size * scale, square_size * scale)).convert_alpha()
 w_r_img = pygame.image.load('images\\wrook.png').convert_alpha()
-w_rook_img = pygame.transform.smoothscale(w_r_img, (square_size*scale, square_size*scale)).convert_alpha()
+w_rook_img = pygame.transform.smoothscale(w_r_img, (square_size * scale, square_size * scale)).convert_alpha()
 b_r_img = pygame.image.load('images\\brook.png').convert_alpha()
-b_rook_img = pygame.transform.smoothscale(b_r_img, (square_size*scale, square_size*scale)).convert_alpha()
+b_rook_img = pygame.transform.smoothscale(b_r_img, (square_size * scale, square_size * scale)).convert_alpha()
 w_q_img = pygame.image.load('images\\wqueen.png').convert_alpha()
-w_queen_img = pygame.transform.smoothscale(w_q_img, (square_size*scale, square_size*scale)).convert_alpha()
+w_queen_img = pygame.transform.smoothscale(w_q_img, (square_size * scale, square_size * scale)).convert_alpha()
 b_q_img = pygame.image.load('images\\bqueen.png').convert_alpha()
-b_queen_img = pygame.transform.smoothscale(b_q_img, (square_size*scale, square_size*scale)).convert_alpha()
+b_queen_img = pygame.transform.smoothscale(b_q_img, (square_size * scale, square_size * scale)).convert_alpha()
 w_k_img = pygame.image.load('images\\wking.png').convert_alpha()
-w_king_img = pygame.transform.smoothscale(w_k_img, (square_size*scale, square_size*scale)).convert_alpha()
+w_king_img = pygame.transform.smoothscale(w_k_img, (square_size * scale, square_size * scale)).convert_alpha()
 b_k_img = pygame.image.load('images\\bking.png').convert_alpha()
-b_king_img = pygame.transform.smoothscale(b_k_img, (square_size*scale, square_size*scale)).convert_alpha()
+b_king_img = pygame.transform.smoothscale(b_k_img, (square_size * scale, square_size * scale)).convert_alpha()
 sqr_highlight0 = pygame.image.load('images\\highlight0.png').convert_alpha()
 sqr_highlight0 = pygame.transform.smoothscale(sqr_highlight0, (square_size, square_size)).convert_alpha()
 sqr_highlight1 = pygame.image.load('images\\highlight1.png').convert_alpha()
 sqr_highlight1 = pygame.transform.smoothscale(sqr_highlight1, (square_size, square_size)).convert_alpha()
-choose_piece_img = pygame.image.load('images\\ChoosePieceHighlight.png').convert()
-choose_piece_img = pygame.transform.scale(choose_piece_img, (square_size, square_size * 4)).convert()
+choose_piece_img = pygame.image.load('images\\ChoosePieceHighlight.png').convert_alpha()
+choose_piece_img = pygame.transform.scale(choose_piece_img, (square_size, square_size * 4)).convert_alpha()
+prev_light = pygame.image.load('images\\prevlight.png').convert()
+prev_light = pygame.transform.smoothscale(prev_light, (square_size, square_size)).convert()
+prev_dark = pygame.image.load('images\\prevdark.png').convert()
+prev_dark = pygame.transform.smoothscale(prev_dark, (square_size, square_size)).convert()
+to_light = pygame.image.load('images\\tolight.png').convert()
+to_light = pygame.transform.smoothscale(to_light, (square_size, square_size)).convert()
+to_dark = pygame.image.load('images\\todark.png').convert()
+to_dark = pygame.transform.smoothscale(to_dark, (square_size, square_size)).convert()
 
 # Representation of board in code ------------------------------------
 board = []
-occupied_square = []
 for squ_on_board in range(64):
     board.append([squ_on_board, 0])
+previous_board_state = copy.deepcopy(board)
+# --------------------------------------------------------------------
+white_occupancy = [[], [], [], [], [], []]
+black_occupancy = [[], [], [], [], [], []]
+# --------------------------------------------------------------------
+white_pawn_moves, black_pawn_moves = [], []
+knight_moves = []
+bishop_moves = []
+rook_moves = []
+queen_moves = []
+king_moves = []
+# Mapping pieces to array indexes
+segment_map = {9: 0, 10: 1, 11: 2,
+               12: 3, 13: 4, 14: 5,
+               17: 0, 18: 1, 19: 2,
+               20: 3, 21: 4, 22: 5}
+
+# light and dark squares representation
+light_dark = [0, 1, 0, 1, 0, 1, 0, 1,
+              1, 0, 1, 0, 1, 0, 1, 0,
+              0, 1, 0, 1, 0, 1, 0, 1,
+              1, 0, 1, 0, 1, 0, 1, 0,
+              0, 1, 0, 1, 0, 1, 0, 1,
+              1, 0, 1, 0, 1, 0, 1, 0,
+              0, 1, 0, 1, 0, 1, 0, 1,
+              1, 0, 1, 0, 1, 0, 1, 0
+              ]
 
 # Representation of pieces in code -----------------------------------
 pawn = 1
@@ -115,7 +152,7 @@ def get_square_index(ref_pos=DEFAULT_tup, file=DEFAULT_int, rank=DEFAULT_int):
                 if square_coord[1] <= ref_pos[1] <= (square_coord[1] + square_size):
                     square_index = sq
                     break
-    if file in range(1, 9) and rank in range(1, 9):
+    if (1 <= file <= 8) and (1 <= rank <= 8):
         square_index = ((rank * 8) - (8 - file)) - 1
     return square_index
 
@@ -131,16 +168,55 @@ def get_file_n_rank(sq_index):
 
 
 # Note: Order that these moves are generated IMPORTANT for checking direction to stop movement when a piece is blocked
-def piece_possible_squares():
-    n_arr = []
-    b_arr = []
-    r_arr = []
-    q_arr = []
-    k_arr = []
-    wp_arr = []
-    bp_arr = []
-    temp_arr = []
+def initialize_white_pawn_moves():
+    global white_pawn_moves
+    temp_arr = [[], [], []]
+    # Generating all possible squares white pawns can move to from each square
+    for wp_sqr in range(64):
+        wp_file, wp_rank = get_file_n_rank(wp_sqr)
 
+        wp_f, wp_r = wp_file + 1, wp_rank + 1
+        if wp_f in range(1, 9) and wp_r in range(1, 9):
+            temp_arr[0].append(get_square_index(file=wp_f, rank=wp_r))
+        wp_f, wp_r = wp_file + 0, wp_rank + 1
+        if wp_f in range(1, 9) and wp_r in range(1, 9):
+            temp_arr[1].append(get_square_index(file=wp_f, rank=wp_r))
+        if wp_sqr in range(8, 16):
+            wp_f, wp_r = wp_file + 0, wp_rank + 2
+            temp_arr[1].append(get_square_index(file=wp_f, rank=wp_r))
+        wp_f, wp_r = wp_file - 1, wp_rank + 1
+        if wp_f in range(1, 9) and wp_r in range(1, 9):
+            temp_arr[2].append(get_square_index(file=wp_f, rank=wp_r))
+        white_pawn_moves.append(temp_arr)
+        temp_arr = [[], [], []]
+
+
+def initialize_black_pawn_moves():
+    global black_pawn_moves
+    temp_arr = [[], [], []]
+    # Generating all possible squares black pawns can move to from each square
+    for bp_sqr in range(64):
+        bp_file, bp_rank = get_file_n_rank(bp_sqr)
+
+        bp_f, bp_r = bp_file - 1, bp_rank - 1
+        if bp_f in range(1, 9) and bp_r in range(1, 9):
+            temp_arr[0].append(get_square_index(file=bp_f, rank=bp_r))
+        bp_f, bp_r = bp_file + 0, bp_rank - 1
+        if bp_f in range(1, 9) and bp_r in range(1, 9):
+            temp_arr[1].append(get_square_index(file=bp_f, rank=bp_r))
+        if bp_sqr in range(48, 56):
+            bp_f, bp_r = bp_file + 0, bp_rank - 2
+            temp_arr[1].append(get_square_index(file=bp_f, rank=bp_r))
+        bp_f, bp_r = bp_file + 1, bp_rank - 1
+        if bp_f in range(1, 9) and bp_r in range(1, 9):
+            temp_arr[2].append(get_square_index(file=bp_f, rank=bp_r))
+        black_pawn_moves.append(temp_arr)
+        temp_arr = [[], [], []]
+
+
+def initialize_knight_moves():
+    global knight_moves
+    temp_arr = []
     # Generating all possible squares the knight can jump to from each square
     for n_sqr in range(64):
         n_file, n_rank = get_file_n_rank(n_sqr)
@@ -169,9 +245,13 @@ def piece_possible_squares():
         n_f, n_r = n_file - 1, n_rank - 2
         if n_f in range(1, 9) and n_r in range(1, 9):
             temp_arr.append(get_square_index(file=n_f, rank=n_r))
-        n_arr.append(temp_arr)
+        knight_moves.append(temp_arr)
         temp_arr = []
 
+
+def initialize_bishop_moves():
+    global bishop_moves
+    temp_arr = [[], [], [], []]
     # Generating all possible squares the bishop can slide to from each square
     for b_sqr in range(64):
         b_file, b_rank = get_file_n_rank(b_sqr)
@@ -181,28 +261,32 @@ def piece_possible_squares():
             b_f += 1
             b_r += 1
             if b_f in range(1, 9) and b_r in range(1, 9):
-                temp_arr.append(get_square_index(file=b_f, rank=b_r))
-        b_f, b_r = b_file, b_rank
-        while b_f in range(1, 9) and b_r in range(1, 9):
-            b_f += 1
-            b_r -= 1
-            if b_f in range(1, 9) and b_r in range(1, 9):
-                temp_arr.append(get_square_index(file=b_f, rank=b_r))
+                temp_arr[0].append(get_square_index(file=b_f, rank=b_r))
         b_f, b_r = b_file, b_rank
         while b_f in range(1, 9) and b_r in range(1, 9):
             b_f -= 1
             b_r += 1
             if b_f in range(1, 9) and b_r in range(1, 9):
-                temp_arr.append(get_square_index(file=b_f, rank=b_r))
+                temp_arr[1].append(get_square_index(file=b_f, rank=b_r))
         b_f, b_r = b_file, b_rank
         while b_f in range(1, 9) and b_r in range(1, 9):
             b_f -= 1
             b_r -= 1
             if b_f in range(1, 9) and b_r in range(1, 9):
-                temp_arr.append(get_square_index(file=b_f, rank=b_r))
-        b_arr.append(temp_arr)
-        temp_arr = []
+                temp_arr[2].append(get_square_index(file=b_f, rank=b_r))
+        b_f, b_r = b_file, b_rank
+        while b_f in range(1, 9) and b_r in range(1, 9):
+            b_f += 1
+            b_r -= 1
+            if b_f in range(1, 9) and b_r in range(1, 9):
+                temp_arr[3].append(get_square_index(file=b_f, rank=b_r))
+        bishop_moves.append(temp_arr)
+        temp_arr = [[], [], [], []]
 
+
+def initialize_rook_moves():
+    global rook_moves
+    temp_arr = [[], [], [], []]
     # Generating all possible squares the rook can slide to from each square
     for r_sqr in range(64):
         r_file, r_rank = get_file_n_rank(r_sqr)
@@ -212,28 +296,32 @@ def piece_possible_squares():
             r_f += 1
             r_r += 0
             if r_f in range(1, 9) and r_r in range(1, 9):
-                temp_arr.append(get_square_index(file=r_f, rank=r_r))
-        r_f, r_r = r_file, r_rank
-        while r_f in range(1, 9) and r_r in range(1, 9):
-            r_f += 0
-            r_r -= 1
-            if r_f in range(1, 9) and r_r in range(1, 9):
-                temp_arr.append(get_square_index(file=r_f, rank=r_r))
-        r_f, r_r = r_file, r_rank
-        while r_f in range(1, 9) and r_r in range(1, 9):
-            r_f -= 1
-            r_r += 0
-            if r_f in range(1, 9) and r_r in range(1, 9):
-                temp_arr.append(get_square_index(file=r_f, rank=r_r))
+                temp_arr[0].append(get_square_index(file=r_f, rank=r_r))
         r_f, r_r = r_file, r_rank
         while r_f in range(1, 9) and r_r in range(1, 9):
             r_f += 0
             r_r += 1
             if r_f in range(1, 9) and r_r in range(1, 9):
-                temp_arr.append(get_square_index(file=r_f, rank=r_r))
-        r_arr.append(temp_arr)
-        temp_arr = []
+                temp_arr[1].append(get_square_index(file=r_f, rank=r_r))
+        r_f, r_r = r_file, r_rank
+        while r_f in range(1, 9) and r_r in range(1, 9):
+            r_f -= 1
+            r_r += 0
+            if r_f in range(1, 9) and r_r in range(1, 9):
+                temp_arr[2].append(get_square_index(file=r_f, rank=r_r))
+        r_f, r_r = r_file, r_rank
+        while r_f in range(1, 9) and r_r in range(1, 9):
+            r_f += 0
+            r_r -= 1
+            if r_f in range(1, 9) and r_r in range(1, 9):
+                temp_arr[3].append(get_square_index(file=r_f, rank=r_r))
+        rook_moves.append(temp_arr)
+        temp_arr = [[], [], [], []]
 
+
+def initialize_queen_moves():
+    global queen_moves
+    temp_arr = [[], [], [], [], [], [], [], []]
     # Generating all possible squares the queen can slide to from each square
     for q_sqr in range(64):
         q_file, q_rank = get_file_n_rank(q_sqr)
@@ -241,54 +329,58 @@ def piece_possible_squares():
         q_f, q_r = q_file, q_rank
         while q_f in range(1, 9) and q_r in range(1, 9):
             q_f += 1
-            q_r += 1
+            q_r += 0
             if q_f in range(1, 9) and q_r in range(1, 9):
-                temp_arr.append(get_square_index(file=q_f, rank=q_r))
+                temp_arr[0].append(get_square_index(file=q_f, rank=q_r))
         q_f, q_r = q_file, q_rank
         while q_f in range(1, 9) and q_r in range(1, 9):
             q_f += 1
-            q_r -= 1
-            if q_f in range(1, 9) and q_r in range(1, 9):
-                temp_arr.append(get_square_index(file=q_f, rank=q_r))
-        q_f, q_r = q_file, q_rank
-        while q_f in range(1, 9) and q_r in range(1, 9):
-            q_f -= 1
             q_r += 1
             if q_f in range(1, 9) and q_r in range(1, 9):
-                temp_arr.append(get_square_index(file=q_f, rank=q_r))
-        q_f, q_r = q_file, q_rank
-        while q_f in range(1, 9) and q_r in range(1, 9):
-            q_f -= 1
-            q_r -= 1
-            if q_f in range(1, 9) and q_r in range(1, 9):
-                temp_arr.append(get_square_index(file=q_f, rank=q_r))
-        q_f, q_r = q_file, q_rank
-        while q_f in range(1, 9) and q_r in range(1, 9):
-            q_f += 1
-            q_r += 0
-            if q_f in range(1, 9) and q_r in range(1, 9):
-                temp_arr.append(get_square_index(file=q_f, rank=q_r))
-        q_f, q_r = q_file, q_rank
-        while q_f in range(1, 9) and q_r in range(1, 9):
-            q_f += 0
-            q_r -= 1
-            if q_f in range(1, 9) and q_r in range(1, 9):
-                temp_arr.append(get_square_index(file=q_f, rank=q_r))
-        q_f, q_r = q_file, q_rank
-        while q_f in range(1, 9) and q_r in range(1, 9):
-            q_f -= 1
-            q_r += 0
-            if q_f in range(1, 9) and q_r in range(1, 9):
-                temp_arr.append(get_square_index(file=q_f, rank=q_r))
+                temp_arr[1].append(get_square_index(file=q_f, rank=q_r))
         q_f, q_r = q_file, q_rank
         while q_f in range(1, 9) and q_r in range(1, 9):
             q_f += 0
             q_r += 1
             if q_f in range(1, 9) and q_r in range(1, 9):
-                temp_arr.append(get_square_index(file=q_f, rank=q_r))
-        q_arr.append(temp_arr)
-        temp_arr = []
+                temp_arr[2].append(get_square_index(file=q_f, rank=q_r))
+        q_f, q_r = q_file, q_rank
+        while q_f in range(1, 9) and q_r in range(1, 9):
+            q_f -= 1
+            q_r += 1
+            if q_f in range(1, 9) and q_r in range(1, 9):
+                temp_arr[3].append(get_square_index(file=q_f, rank=q_r))
+        q_f, q_r = q_file, q_rank
+        while q_f in range(1, 9) and q_r in range(1, 9):
+            q_f -= 1
+            q_r += 0
+            if q_f in range(1, 9) and q_r in range(1, 9):
+                temp_arr[4].append(get_square_index(file=q_f, rank=q_r))
+        q_f, q_r = q_file, q_rank
+        while q_f in range(1, 9) and q_r in range(1, 9):
+            q_f -= 1
+            q_r -= 1
+            if q_f in range(1, 9) and q_r in range(1, 9):
+                temp_arr[5].append(get_square_index(file=q_f, rank=q_r))
+        q_f, q_r = q_file, q_rank
+        while q_f in range(1, 9) and q_r in range(1, 9):
+            q_f += 0
+            q_r -= 1
+            if q_f in range(1, 9) and q_r in range(1, 9):
+                temp_arr[6].append(get_square_index(file=q_f, rank=q_r))
+        q_f, q_r = q_file, q_rank
+        while q_f in range(1, 9) and q_r in range(1, 9):
+            q_f += 1
+            q_r -= 1
+            if q_f in range(1, 9) and q_r in range(1, 9):
+                temp_arr[7].append(get_square_index(file=q_f, rank=q_r))
+        queen_moves.append(temp_arr)
+        temp_arr = [[], [], [], [], [], [], [], []]
 
+
+def initialize_king_moves():
+    global king_moves
+    temp_arr = []
     # Generating all possible squares the king can move to from each square
     for k_sqr in range(64):
         k_file, k_rank = get_file_n_rank(k_sqr)
@@ -317,54 +409,8 @@ def piece_possible_squares():
         k_f, k_r = k_file + 1, k_rank - 1
         if k_f in range(1, 9) and k_r in range(1, 9):
             temp_arr.append(get_square_index(file=k_f, rank=k_r))
-        k_arr.append(temp_arr)
+        king_moves.append(temp_arr)
         temp_arr = []
-
-    # Generating all possible squares white pawns can move to from each square
-    for wp_sqr in range(64):
-        if wp_sqr not in range(8):
-            wp_file, wp_rank = get_file_n_rank(wp_sqr)
-
-            wp_f, wp_r = wp_file + 1, wp_rank + 1
-            if wp_f in range(1, 9) and wp_r in range(1, 9):
-                temp_arr.append(get_square_index(file=wp_f, rank=wp_r))
-            wp_f, wp_r = wp_file + 0, wp_rank + 1
-            if wp_f in range(1, 9) and wp_r in range(1, 9):
-                temp_arr.append(get_square_index(file=wp_f, rank=wp_r))
-            if wp_sqr in range(8, 16):
-                wp_f, wp_r = wp_file + 0, wp_rank + 2
-                temp_arr.append(get_square_index(file=wp_f, rank=wp_r))
-            wp_f, wp_r = wp_file - 1, wp_rank + 1
-            if wp_f in range(1, 9) and wp_r in range(1, 9):
-                temp_arr.append(get_square_index(file=wp_f, rank=wp_r))
-            wp_arr.append(temp_arr)
-            temp_arr = []
-        else:
-            wp_arr.append([])
-
-    # Generating all possible squares black pawns can move to from each square
-    for bp_sqr in range(64):
-        if bp_sqr not in range(56, 64):
-            bp_file, bp_rank = get_file_n_rank(bp_sqr)
-
-            bp_f, bp_r = bp_file - 1, bp_rank - 1
-            if bp_f in range(1, 9) and bp_r in range(1, 9):
-                temp_arr.append(get_square_index(file=bp_f, rank=bp_r))
-            bp_f, bp_r = bp_file + 0, bp_rank - 1
-            if bp_f in range(1, 9) and bp_r in range(1, 9):
-                temp_arr.append(get_square_index(file=bp_f, rank=bp_r))
-            if bp_sqr in range(48, 56):
-                bp_f, bp_r = bp_file + 0, bp_rank - 2
-                temp_arr.append(get_square_index(file=bp_f, rank=bp_r))
-            bp_f, bp_r = bp_file + 1, bp_rank - 1
-            if bp_f in range(1, 9) and bp_r in range(1, 9):
-                temp_arr.append(get_square_index(file=bp_f, rank=bp_r))
-            bp_arr.append(temp_arr)
-            temp_arr = []
-        else:
-            bp_arr.append([])
-
-    return [n_arr, b_arr, r_arr, q_arr, k_arr, wp_arr, bp_arr]
 
 
 def load_fen(fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"):
@@ -393,16 +439,53 @@ def load_fen(fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"):
             sq = (8 * slash_count) - 1
 
 
-def get_occupied_squares():
-    final_occupied = []
-    for sqr in board:
-        if sqr[1] != 0:
-            final_occupied.append(sqr)
-    return final_occupied
+def initialize_white_occupancy():
+    global white_occupancy
+    white_occupancy = [[], [], [], [], [], []]
+    for p_n_pos in board:
+        square, piece = p_n_pos[0], p_n_pos[1]
+        if piece > 0:
+            if piece == 9:
+                white_occupancy[0].append(square)
+            if piece == 10:
+                white_occupancy[1].append(square)
+            if piece == 11:
+                white_occupancy[2].append(square)
+            if piece == 12:
+                white_occupancy[3].append(square)
+            if piece == 13:
+                white_occupancy[4].append(square)
+            if piece == 14:
+                white_occupancy[5].append(square)
+
+
+def initialize_black_occupancy():
+    global black_occupancy
+    black_occupancy = [[], [], [], [], [], []]
+    for p_n_pos in board:
+        square, piece = p_n_pos[0], p_n_pos[1]
+        if piece > 0:
+            if piece == 17:
+                black_occupancy[0].append(square)
+            if piece == 18:
+                black_occupancy[1].append(square)
+            if piece == 19:
+                black_occupancy[2].append(square)
+            if piece == 20:
+                black_occupancy[3].append(square)
+            if piece == 21:
+                black_occupancy[4].append(square)
+            if piece == 22:
+                black_occupancy[5].append(square)
 
 
 def draw_board():
-    window.blit(board_img, (b_pos_x, b_pos_y))
+    for square in range(64):
+        file, rank = get_file_n_rank(square)
+        if (file + rank) % 2 == 0:
+            window.blit(dark_sqr, get_square_coord(square))
+        else:
+            window.blit(light_sqr, get_square_coord(square))
 
 
 def draw_piece(piece, square_index, specific=False, coord=(0, 0)):
@@ -414,15 +497,12 @@ def draw_piece(piece, square_index, specific=False, coord=(0, 0)):
                 img = pni[1]
         if specific:
             p_coord = (coord[0] - (square_size * 1.021 / 2), coord[1] - (square_size * 1.021 / 2))
-            img = pygame.transform.smoothscale(img, (square_size*1.021, square_size*1.021)).convert_alpha()
+            img = pygame.transform.smoothscale(img, (square_size * 1.021, square_size * 1.021)).convert_alpha()
         if not specific:
             piece_coord_x = get_square_coord(square_index)[0] + ((1 - scale) * square_size / 2) + 1
             piece_coord_y = get_square_coord(square_index)[1] + ((1 - scale) * square_size / 2) + 1
             p_coord = [piece_coord_x, piece_coord_y]
-            if piece == 9:
-                p_coord[0] = get_square_coord(square_index)[0] + ((1 - 0.87) * square_size / 2) + 1
-                p_coord[1] = piece_coord_y + (square_size * 0.015)
-            if piece == 17:
+            if piece == 9 or piece == 17:
                 p_coord[0] = get_square_coord(square_index)[0] + ((1 - 0.87) * square_size / 2) + 1
                 p_coord[1] = piece_coord_y + (square_size * 0.015)
         window.blit(img, p_coord)
@@ -430,58 +510,140 @@ def draw_piece(piece, square_index, specific=False, coord=(0, 0)):
 
 def render_pieces(omit=DEFAULT_int):
     omit_square = omit
+    attacked = attacked_squares()
+    check, doublecheck = False, False
+    pins = pin_n_check_resolves(False)
+    check_resolve = ""
+    if previous_board_state != board:
+        from_here, to_there, from_here_index, to_there_index, square_counter = "", "", "", "", 0
+        for sqr in previous_board_state:
+            if sqr != board[square_counter] and board[square_counter][1] == 0:
+                from_here = get_square_coord(sqr[0])
+                from_here_index = previous_board_state[square_counter][0]
+            if sqr != board[square_counter] and board[square_counter][1] != 0:
+                to_there = get_square_coord(sqr[0])
+                to_there_index = board[square_counter][0]
+            square_counter += 1
+        # ---------------------------------------------------------
+        if from_here != "" and to_there != "":
+            if light_dark[from_here_index] == 1:
+                window.blit(to_light, from_here)
+            else:
+                window.blit(to_dark, from_here)
+            if light_dark[to_there_index] == 1:
+                window.blit(prev_light, to_there)
+            else:
+                window.blit(prev_dark, to_there)
+
     if omit != DEFAULT_int and board[omit][1] != 0:
-        s_x = get_square_coord(omit_square)[0]
-        s_y = get_square_coord(omit_square)[1]
-        window.blit(sqr_highlight0, (s_x, s_y))
+        if turn_to_move == "w" and board[omit][1] <= 14:
+            s_x = get_square_coord(omit_square)[0]
+            s_y = get_square_coord(omit_square)[1]
+            window.blit(sqr_highlight0, (s_x, s_y))
+        if turn_to_move == "b" and board[omit][1] >= 17:
+            s_x = get_square_coord(omit_square)[0]
+            s_y = get_square_coord(omit_square)[1]
+            window.blit(sqr_highlight0, (s_x, s_y))
         # Don't Highlight any moves if there is a pawn to promote
         if not pawn_to_promote():
-            for piece in range(6):
-                if piece == 0 and (board[omit][1] == 10 or board[omit][1] == 18):
-                    for sqr in legal_moves(omit, board[omit][1]):
-                        window.blit(sqr_highlight0, get_square_coord(sqr))
-                        window.blit(sqr_highlight1, get_square_coord(sqr))
-                if piece == 1 and (board[omit][1] == 11 or board[omit][1] == 19):
-                    for sqr in legal_moves(omit, board[omit][1]):
-                        window.blit(sqr_highlight0, get_square_coord(sqr))
-                        window.blit(sqr_highlight1, get_square_coord(sqr))
-                if piece == 2 and (board[omit][1] == 12 or board[omit][1] == 20):
-                    for sqr in legal_moves(omit, board[omit][1]):
-                        window.blit(sqr_highlight0, get_square_coord(sqr))
-                        window.blit(sqr_highlight1, get_square_coord(sqr))
-                if piece == 3 and (board[omit][1] == 13 or board[omit][1] == 21):
-                    for sqr in legal_moves(omit, board[omit][1]):
-                        window.blit(sqr_highlight0, get_square_coord(sqr))
-                        window.blit(sqr_highlight1, get_square_coord(sqr))
-                if piece == 4 and (board[omit][1] == 14 or board[omit][1] == 22):
-                    for sqr in legal_moves(omit, board[omit][1]):
-                        window.blit(sqr_highlight0, get_square_coord(sqr))
-                        window.blit(sqr_highlight1, get_square_coord(sqr))
-                    q_s_c, k_s_c = can_castle()
-                    if board[omit][1] == 14 and turn_to_move == "w" and q_s_c:
-                        window.blit(sqr_highlight0, get_square_coord(0))
-                        window.blit(sqr_highlight1, get_square_coord(0))
-                        window.blit(sqr_highlight0, get_square_coord(2))
-                        window.blit(sqr_highlight1, get_square_coord(2))
-                    if board[omit][1] == 14 and turn_to_move == "w" and k_s_c:
-                        window.blit(sqr_highlight0, get_square_coord(6))
-                        window.blit(sqr_highlight1, get_square_coord(6))
-                        window.blit(sqr_highlight0, get_square_coord(7))
-                        window.blit(sqr_highlight1, get_square_coord(7))
-                    if board[omit][1] == 22 and turn_to_move == "b" and q_s_c:
-                        window.blit(sqr_highlight0, get_square_coord(58))
-                        window.blit(sqr_highlight1, get_square_coord(58))
-                        window.blit(sqr_highlight0, get_square_coord(56))
-                        window.blit(sqr_highlight1, get_square_coord(56))
-                    if board[omit][1] == 22 and turn_to_move == "b" and k_s_c:
-                        window.blit(sqr_highlight0, get_square_coord(62))
-                        window.blit(sqr_highlight1, get_square_coord(62))
-                        window.blit(sqr_highlight0, get_square_coord(63))
-                        window.blit(sqr_highlight1, get_square_coord(63))
-                if piece == 5 and (board[omit][1] == 9 or board[omit][1] == 17):
-                    for sqr in legal_moves(omit, board[omit][1]):
-                        window.blit(sqr_highlight0, get_square_coord(sqr))
-                        window.blit(sqr_highlight1, get_square_coord(sqr))
+            if turn_to_move == "w":
+                if attacked[white_king_pos] == 1:
+                    check = True
+                    pins, check_resolve = pin_n_check_resolves(True)
+                if attacked[white_king_pos] > 1:
+                    doublecheck = True
+
+                for piece in range(6):
+                    if piece == 5:
+                        if board[omit][1] == 9 and not doublecheck:
+                            for sqr in legal_white_pawn_moves(omit, check, pins, check_resolve):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                    if piece == 0:
+                        if board[omit][1] == 10 and not doublecheck:
+                            for sqr in legal_white_knight_moves(omit, check, pins, check_resolve):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                    if piece == 1:
+                        if board[omit][1] == 11 and not doublecheck:
+                            for sqr in legal_white_bishop_moves(omit, check, pins, check_resolve):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                    if piece == 2:
+                        if board[omit][1] == 12 and not doublecheck:
+                            for sqr in legal_white_rook_moves(omit, check, pins, check_resolve):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                    if piece == 3:
+                        if board[omit][1] == 13 and not doublecheck:
+                            for sqr in legal_white_queen_moves(omit, check, pins, check_resolve):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                    if piece == 4:
+                        if board[omit][1] == 14:
+                            for sqr in legal_white_king_moves(omit, attacked):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                        q_s_c, k_s_c = can_castle()
+                        if board[omit][1] == 14 and turn_to_move == "w" and q_s_c:
+                            window.blit(sqr_highlight0, get_square_coord(0))
+                            window.blit(sqr_highlight1, get_square_coord(0))
+                            window.blit(sqr_highlight0, get_square_coord(2))
+                            window.blit(sqr_highlight1, get_square_coord(2))
+                        if board[omit][1] == 14 and turn_to_move == "w" and k_s_c:
+                            window.blit(sqr_highlight0, get_square_coord(6))
+                            window.blit(sqr_highlight1, get_square_coord(6))
+                            window.blit(sqr_highlight0, get_square_coord(7))
+                            window.blit(sqr_highlight1, get_square_coord(7))
+            if turn_to_move == "b":
+                if attacked[black_king_pos] == 1:
+                    check = True
+                    pins, check_resolve = pin_n_check_resolves(True)
+                if attacked[black_king_pos] > 1:
+                    doublecheck = True
+
+                for piece in range(6):
+                    if piece == 5:
+                        if board[omit][1] == 17 and not doublecheck:
+                            for sqr in legal_black_pawn_moves(omit, check, pins, check_resolve):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                    if piece == 0:
+                        if board[omit][1] == 18 and not doublecheck:
+                            for sqr in legal_black_knight_moves(omit, check, pins, check_resolve):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                    if piece == 1:
+                        if board[omit][1] == 19 and not doublecheck:
+                            for sqr in legal_black_bishop_moves(omit, check, pins, check_resolve):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                    if piece == 2:
+                        if board[omit][1] == 20 and not doublecheck:
+                            for sqr in legal_black_rook_moves(omit, check, pins, check_resolve):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                    if piece == 3:
+                        if board[omit][1] == 21 and not doublecheck:
+                            for sqr in legal_black_queen_moves(omit, check, pins, check_resolve):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                    if piece == 4:
+                        if board[omit][1] == 22:
+                            for sqr in legal_black_king_moves(omit, attacked):
+                                window.blit(sqr_highlight0, get_square_coord(sqr))
+                                window.blit(sqr_highlight1, get_square_coord(sqr))
+                        q_s_c, k_s_c = can_castle()
+                        if board[omit][1] == 22 and turn_to_move == "b" and q_s_c:
+                            window.blit(sqr_highlight0, get_square_coord(58))
+                            window.blit(sqr_highlight1, get_square_coord(58))
+                            window.blit(sqr_highlight0, get_square_coord(56))
+                            window.blit(sqr_highlight1, get_square_coord(56))
+                        if board[omit][1] == 22 and turn_to_move == "b" and k_s_c:
+                            window.blit(sqr_highlight0, get_square_coord(62))
+                            window.blit(sqr_highlight1, get_square_coord(62))
+                            window.blit(sqr_highlight0, get_square_coord(63))
+                            window.blit(sqr_highlight1, get_square_coord(63))
     if not picked:
         omit_square = DEFAULT_int
     for sqr in board:
@@ -503,7 +665,7 @@ def render_pieces(omit=DEFAULT_int):
             if sqr in range(0, 8):
                 if board[sqr][1] == 17:
                     sqr_file, sqr_rank = get_file_n_rank(sqr)
-                    window.blit(choose_piece_img, get_square_coord(sqr+24))
+                    window.blit(choose_piece_img, get_square_coord(sqr + 24))
                     draw_piece(21, get_square_index(file=sqr_file, rank=sqr_rank))
                     draw_piece(20, get_square_index(file=sqr_file, rank=sqr_rank + 1))
                     draw_piece(19, get_square_index(file=sqr_file, rank=sqr_rank + 2))
@@ -518,12 +680,12 @@ def keep_mouse_boundary():
 
     if mouse_pos[0] < b_pos_x:
         mouse_pos = (b_pos_x, mouse_pos[1])
-    if mouse_pos[0] > b_pos_x + board_size-1:
-        mouse_pos = (b_pos_x + board_size-1, mouse_pos[1])
+    if mouse_pos[0] > b_pos_x + board_size - 1:
+        mouse_pos = (b_pos_x + board_size - 1, mouse_pos[1])
     if mouse_pos[1] < b_pos_y:
         mouse_pos = (mouse_pos[0], b_pos_y)
-    if mouse_pos[1] > b_pos_y + board_size-1:
-        mouse_pos = (mouse_pos[0], b_pos_y + board_size-1)
+    if mouse_pos[1] > b_pos_y + board_size - 1:
+        mouse_pos = (mouse_pos[0], b_pos_y + board_size - 1)
     # -------------------------------------------
     if mouse_clicked_on != DEFAULT_tup:
         if mouse_clicked_on[0] < b_pos_x:
@@ -547,19 +709,17 @@ def keep_mouse_boundary():
 
 
 def update_king_position():
-    global king_pos
+    global white_king_pos
+    global black_king_pos
     for sqr in board:
-        if turn_to_move == "w":
-            if sqr[1] == 14:
-                king_pos = sqr[0]
-                break
-        if turn_to_move == "b":
-            if sqr[1] == 22:
-                king_pos = sqr[0]
-                break
+        if sqr[1] == 14:
+            white_king_pos = sqr[0]
+        if sqr[1] == 22:
+            black_king_pos = sqr[0]
 
 
 def attacked_squares():
+    global board
     attacked = [0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
@@ -568,1408 +728,945 @@ def attacked_squares():
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0]
+
     if turn_to_move == "w":
-        k_fl, k_rnk = get_file_n_rank(king_pos)
-        right_k = get_square_index(file=k_fl+1, rank=k_rnk)
-        right_up_k = get_square_index(file=k_fl+1, rank=k_rnk+1)
-        up_k = get_square_index(file=k_fl, rank=k_rnk+1)
-        left_up_k = get_square_index(file=k_fl-1, rank=k_rnk+1)
-        left_k = get_square_index(file=k_fl-1, rank=k_rnk)
-        left_down_k = get_square_index(file=k_fl-1, rank=k_rnk-1)
-        down_k = get_square_index(file=k_fl, rank=k_rnk-1)
-        right_down_k = get_square_index(file=k_fl+1, rank=k_rnk-1)
-        for p_n_pos in board:
-            if p_n_pos[1] == 0:
-                continue
-            square, piece = p_n_pos[0], p_n_pos[1]
-            # ------------------------------------------------------------------
-            if piece == 17:
-                for move in possible_sqr[6][square]:
-                    if get_file_n_rank(square)[0] == get_file_n_rank(move)[0]:
-                        continue
-                    if attacked[move] == 0:
-                        attacked[move] = 1
-                    else:
-                        attacked[move] = 2
-            # ------------------------------------------------------------------
-            if piece == 18:
-                for move in possible_sqr[0][square]:
-                    if attacked[move] == 0:
-                        attacked[move] = 1
-                    else:
-                        attacked[move] = 2
-            # ------------------------------------------------------------------
-            if piece == 19:
-                fl, rnk = get_file_n_rank(square)
-                right_up, left_up, left_down, right_down = True, True, True, True
-                for move in possible_sqr[1][square]:
-                    temp_fl, temp_rnk = get_file_n_rank(move)
-                    if temp_fl > fl and temp_rnk > rnk and right_up:
-                        if (move == king_pos) and (right_up_k != DEFAULT_int):
-                            attacked[right_up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right_up = False
-                    if temp_fl < fl and temp_rnk > rnk and left_up:
-                        if (move == king_pos) and (left_up_k != DEFAULT_int):
-                            attacked[left_up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left_up = False
-                    if temp_fl < fl and temp_rnk < rnk and left_down:
-                        if (move == king_pos) and (left_down_k != DEFAULT_int):
-                            attacked[left_down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left_down = False
-                    if temp_fl > fl and temp_rnk < rnk and right_down:
-                        if (move == king_pos) and (right_down_k != DEFAULT_int):
-                            attacked[right_down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right_down = False
-            # ------------------------------------------------------------------
-            if piece == 20:
-                fl, rnk = get_file_n_rank(square)
-                right, up, left, down = True, True, True, True
-                for move in possible_sqr[2][square]:
-                    temp_fl, temp_rnk = get_file_n_rank(move)
-                    if temp_fl > fl and temp_rnk == rnk and right:
-                        if (move == king_pos) and (right_k != DEFAULT_int):
-                            attacked[right_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right = False
-                    if temp_fl == fl and temp_rnk > rnk and up:
-                        if (move == king_pos) and (up_k != DEFAULT_int):
-                            attacked[up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            up = False
-                    if temp_fl < fl and temp_rnk == rnk and left:
-                        if (move == king_pos) and (left_k != DEFAULT_int):
-                            attacked[left_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left = False
-                    if temp_fl == fl and temp_rnk < rnk and down:
-                        if (move == king_pos) and (down_k != DEFAULT_int):
-                            attacked[down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            down = False
-            # ------------------------------------------------------------------
-            if piece == 21:
-                fl, rnk = get_file_n_rank(square)
-                right_up, left_up, left_down, right_down = True, True, True, True
-                right, up, left, down = True, True, True, True
-                for move in possible_sqr[3][square]:
-                    temp_fl, temp_rnk = get_file_n_rank(move)
-                    if temp_fl > fl and temp_rnk > rnk and right_up:
-                        if (move == king_pos) and (right_up_k != DEFAULT_int):
-                            attacked[right_up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right_up = False
-                    if temp_fl < fl and temp_rnk > rnk and left_up:
-                        if (move == king_pos) and (left_up_k != DEFAULT_int):
-                            attacked[left_up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left_up = False
-                    if temp_fl < fl and temp_rnk < rnk and left_down:
-                        if (move == king_pos) and (left_down_k != DEFAULT_int):
-                            attacked[left_down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left_down = False
-                    if temp_fl > fl and temp_rnk < rnk and right_down:
-                        if (move == king_pos) and (right_down_k != DEFAULT_int):
-                            attacked[right_down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right_down = False
-                    if temp_fl > fl and temp_rnk == rnk and right:
-                        if (move == king_pos) and (right_k != DEFAULT_int):
-                            attacked[right_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right = False
-                    if temp_fl == fl and temp_rnk > rnk and up:
-                        if (move == king_pos) and (up_k != DEFAULT_int):
-                            attacked[up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            up = False
-                    if temp_fl < fl and temp_rnk == rnk and left:
-                        if (move == king_pos) and (left_k != DEFAULT_int):
-                            attacked[left_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left = False
-                    if temp_fl == fl and temp_rnk < rnk and down:
-                        if (move == king_pos) and (down_k != DEFAULT_int):
-                            attacked[down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            down = False
-            # ------------------------------------------------------------------
-            if piece == 22:
-                for move in possible_sqr[4][square]:
-                    if attacked[move] == 0:
-                        attacked[move] = 1
-                    else:
-                        attacked[move] = 2
-    if turn_to_move == "b":
-        k_fl, k_rnk = get_file_n_rank(king_pos)
-        right_k = get_square_index(file=k_fl + 1, rank=k_rnk)
-        right_up_k = get_square_index(file=k_fl + 1, rank=k_rnk + 1)
-        up_k = get_square_index(file=k_fl, rank=k_rnk + 1)
-        left_up_k = get_square_index(file=k_fl - 1, rank=k_rnk + 1)
-        left_k = get_square_index(file=k_fl - 1, rank=k_rnk)
-        left_down_k = get_square_index(file=k_fl - 1, rank=k_rnk - 1)
-        down_k = get_square_index(file=k_fl, rank=k_rnk - 1)
-        right_down_k = get_square_index(file=k_fl + 1, rank=k_rnk - 1)
-        for p_n_pos in board:
-            if p_n_pos[1] == 0:
-                continue
-            square, piece = p_n_pos[0], p_n_pos[1]
-            # ------------------------------------------------------------------
-            if piece == 9:
-                for move in possible_sqr[5][square]:
-                    if get_file_n_rank(square)[0] == get_file_n_rank(move)[0]:
-                        continue
-                    if attacked[move] == 0:
-                        attacked[move] = 1
-                    else:
-                        attacked[move] = 2
-            # ------------------------------------------------------------------
-            if piece == 10:
-                for move in possible_sqr[0][square]:
-                    if attacked[move] == 0:
-                        attacked[move] = 1
-                    else:
-                        attacked[move] = 2
-            # ------------------------------------------------------------------
-            if piece == 11:
-                fl, rnk = get_file_n_rank(square)
-                right_up, left_up, left_down, right_down = True, True, True, True
-                for move in possible_sqr[1][square]:
-                    temp_fl, temp_rnk = get_file_n_rank(move)
-                    if temp_fl > fl and temp_rnk > rnk and right_up:
-                        if (move == king_pos) and (right_up_k != DEFAULT_int):
-                            attacked[right_up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right_up = False
-                    if temp_fl < fl and temp_rnk > rnk and left_up:
-                        if (move == king_pos) and (left_up_k != DEFAULT_int):
-                            attacked[left_up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left_up = False
-                    if temp_fl < fl and temp_rnk < rnk and left_down:
-                        if (move == king_pos) and (left_down_k != DEFAULT_int):
-                            attacked[left_down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left_down = False
-                    if temp_fl > fl and temp_rnk < rnk and right_down:
-                        if (move == king_pos) and (right_down_k != DEFAULT_int):
-                            attacked[right_down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right_down = False
-            # ------------------------------------------------------------------
-            if piece == 12:
-                fl, rnk = get_file_n_rank(square)
-                right, up, left, down = True, True, True, True
-                for move in possible_sqr[2][square]:
-                    temp_fl, temp_rnk = get_file_n_rank(move)
-                    if temp_fl > fl and temp_rnk == rnk and right:
-                        if (move == king_pos) and (right_k != DEFAULT_int):
-                            attacked[right_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right = False
-                    if temp_fl == fl and temp_rnk > rnk and up:
-                        if (move == king_pos) and (up_k != DEFAULT_int):
-                            attacked[up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            up = False
-                    if temp_fl < fl and temp_rnk == rnk and left:
-                        if (move == king_pos) and (left_k != DEFAULT_int):
-                            attacked[left_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left = False
-                    if temp_fl == fl and temp_rnk < rnk and down:
-                        if (move == king_pos) and (down_k != DEFAULT_int):
-                            attacked[down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            down = False
-            # ------------------------------------------------------------------
-            if piece == 13:
-                fl, rnk = get_file_n_rank(square)
-                right_up, left_up, left_down, right_down = True, True, True, True
-                right, up, left, down = True, True, True, True
-                for move in possible_sqr[3][square]:
-                    temp_fl, temp_rnk = get_file_n_rank(move)
-                    if temp_fl > fl and temp_rnk > rnk and right_up:
-                        if (move == king_pos) and (right_up_k != DEFAULT_int):
-                            attacked[right_up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right_up = False
-                    if temp_fl < fl and temp_rnk > rnk and left_up:
-                        if (move == king_pos) and (left_up_k != DEFAULT_int):
-                            attacked[left_up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left_up = False
-                    if temp_fl < fl and temp_rnk < rnk and left_down:
-                        if (move == king_pos) and (left_down_k != DEFAULT_int):
-                            attacked[left_down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left_down = False
-                    if temp_fl > fl and temp_rnk < rnk and right_down:
-                        if (move == king_pos) and (right_down_k != DEFAULT_int):
-                            attacked[right_down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right_down = False
-                    if temp_fl > fl and temp_rnk == rnk and right:
-                        if (move == king_pos) and (right_k != DEFAULT_int):
-                            attacked[right_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            right = False
-                    if temp_fl == fl and temp_rnk > rnk and up:
-                        if (move == king_pos) and (up_k != DEFAULT_int):
-                            attacked[up_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            up = False
-                    if temp_fl < fl and temp_rnk == rnk and left:
-                        if (move == king_pos) and (left_k != DEFAULT_int):
-                            attacked[left_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            left = False
-                    if temp_fl == fl and temp_rnk < rnk and down:
-                        if (move == king_pos) and (down_k != DEFAULT_int):
-                            attacked[down_k] = 1
-                        if attacked[move] == 0:
-                            attacked[move] = 1
-                        else:
-                            attacked[move] = 2
-                        if board[move][1] != 0:
-                            down = False
-            # ------------------------------------------------------------------
-            if piece == 14:
-                for move in possible_sqr[4][square]:
-                    if attacked[move] == 0:
-                        attacked[move] = 1
-                    else:
-                        attacked[move] = 2
+        # Removing the king from the board temporarily to avoid attack detection errors
+        board[white_king_pos][1] = 0
+        # ----------------------------------------
+        for pawns in black_occupancy[0]:
+            for move in black_pawn_moves[pawns][0]:
+                attacked[move] += 1
+            for move in black_pawn_moves[pawns][2]:
+                attacked[move] += 1
+        # ----------------------------------------
+        for knights in black_occupancy[1]:
+            for move in knight_moves[knights]:
+                attacked[move] += 1
+        # ----------------------------------------
+        for bishops in black_occupancy[2]:
+            for move in bishop_moves[bishops][0]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in bishop_moves[bishops][1]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in bishop_moves[bishops][2]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in bishop_moves[bishops][3]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+        # ----------------------------------------
+        for rooks in black_occupancy[3]:
+            for move in rook_moves[rooks][0]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in rook_moves[rooks][1]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in rook_moves[rooks][2]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in rook_moves[rooks][3]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+        # ----------------------------------------
+        for queens in black_occupancy[4]:
+            for move in queen_moves[queens][0]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][1]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][2]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][3]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][4]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][5]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][6]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][7]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+        # ----------------------------------------
+        for kings in black_occupancy[5]:
+            for move in king_moves[kings]:
+                attacked[move] += 1
+        # Adding the relevant king back to the board
+        board[white_king_pos][1] = 14
+    else:
+        # Removing the king from the board temporarily to avoid attack detection errors
+        board[black_king_pos][1] = 0
+        # ----------------------------------------
+        for pawns in white_occupancy[0]:
+            for move in white_pawn_moves[pawns][0]:
+                attacked[move] += 1
+            for move in white_pawn_moves[pawns][2]:
+                attacked[move] += 1
+        # ----------------------------------------
+        for knights in white_occupancy[1]:
+            for move in knight_moves[knights]:
+                attacked[move] += 1
+        # ----------------------------------------
+        for bishops in white_occupancy[2]:
+            for move in bishop_moves[bishops][0]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in bishop_moves[bishops][1]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in bishop_moves[bishops][2]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in bishop_moves[bishops][3]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+        # ----------------------------------------
+        for rooks in white_occupancy[3]:
+            for move in rook_moves[rooks][0]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in rook_moves[rooks][1]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in rook_moves[rooks][2]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in rook_moves[rooks][3]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+        # ----------------------------------------
+        for queens in white_occupancy[4]:
+            for move in queen_moves[queens][0]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][1]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][2]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][3]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][4]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][5]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][6]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+            for move in queen_moves[queens][7]:
+                attacked[move] += 1
+                if board[move][1] != 0:
+                    break
+        # ----------------------------------------
+        for kings in white_occupancy[5]:
+            for move in king_moves[kings]:
+                attacked[move] += 1
+        # Adding the relevant king back to the board
+        board[black_king_pos][1] = 22
     return attacked
 
 
-def check_resolves():
-    fl, rnk = get_file_n_rank(king_pos)
-    resolves = []
+def pin_n_check_resolves(in_check):
+    pins = [[], [], [], [], []]
+    check = ""
+
+    # IF WHITE TO MOVE
     if turn_to_move == "w":
-        for sqr in possible_sqr[4][king_pos]:
-            temp_fl, temp_rnk = get_file_n_rank(sqr)
-            piece = board[sqr][1]
-            if piece == 17:
-                if temp_fl > fl and temp_rnk > rnk:
-                    resolves.append(sqr)
-                    if en_passant_target == sqr + 8:
-                        resolves.append(en_passant_target)
-                if temp_fl < fl and temp_rnk > rnk:
-                    resolves.append(sqr)
-                    if en_passant_target == sqr + 8:
-                        resolves.append(en_passant_target)
-        for sqr in possible_sqr[0][king_pos]:
-            piece = board[sqr][1]
-            if piece == 18:
-                resolves.append(sqr)
-                break
-        right_up, left_up, left_down, right_down = True, True, True, True
-        right, up, left, down = True, True, True, True
-        for sqr in possible_sqr[3][king_pos]:
-            temp_fl, temp_rnk = get_file_n_rank(sqr)
-            piece = board[sqr][1]
-            if piece != 0:
-                if temp_fl > fl and temp_rnk > rnk and right_up:
-                    if piece == 19 or piece == 21:
-                        while (temp_fl != fl) and (temp_rnk != rnk):
-                            resolves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                            temp_fl -= 1
-                            temp_rnk -= 1
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[white_king_pos][0]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] >= 17:
+                        if board[square][1] == 20 or board[square][1] == 21:
+                            check = ("0" * (white_king_pos + 1)) + ("1" * (square - white_king_pos)) + (
+                                    "0" * (63 - square))
                         break
-                    right_up = False
-                if temp_fl < fl and temp_rnk > rnk and left_up:
-                    if piece == 19 or piece == 21:
-                        while (temp_fl != fl) and (temp_rnk != rnk):
-                            resolves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                            temp_fl += 1
-                            temp_rnk -= 1
+                    else:
+                        potential_pin = square
+                else:
+                    if 20 <= board[square][1] <= 21:
+                        resolves = ("0" * (white_king_pos + 1)) + ("1" * (square - white_king_pos)) + (
+                                "0" * (63 - square))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
                         break
-                    left_up = False
-                if temp_fl < fl and temp_rnk < rnk and left_down:
-                    if piece == 19 or piece == 21:
-                        while (temp_fl != fl) and (temp_rnk != rnk):
-                            resolves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                            temp_fl += 1
-                            temp_rnk += 1
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[white_king_pos][2]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] >= 17:
+                        if board[square][1] == 20 or board[square][1] == 21:
+                            check = ("0" * (white_king_pos + 1)) + ("00000001" * ((square - white_king_pos) // 8)) + (
+                                    "0" * (63 - square))
                         break
-                    left_down = False
-                if temp_fl > fl and temp_rnk < rnk and right_down:
-                    if piece == 19 or piece == 21:
-                        while (temp_fl != fl) and (temp_rnk != rnk):
-                            resolves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                            temp_fl -= 1
-                            temp_rnk += 1
+                    else:
+                        potential_pin = square
+                else:
+                    if 20 <= board[square][1] <= 21:
+                        resolves = ("0" * (white_king_pos + 1)) + ("00000001" * ((square - white_king_pos) // 8)) + (
+                                "0" * (63 - square))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
                         break
-                    right_down = False
-                if temp_fl > fl and temp_rnk == rnk and right:
-                    if piece == 20 or piece == 21:
-                        while temp_fl != fl:
-                            resolves.append(get_square_index(file=temp_fl, rank=rnk))
-                            temp_fl -= 1
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[white_king_pos][4]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] >= 17:
+                        if board[square][1] == 20 or board[square][1] == 21:
+                            check = ("0" * square) + ("1" * (white_king_pos - square)) + ("0" * (64 - white_king_pos))
                         break
-                    right = False
-                if temp_fl == fl and temp_rnk > rnk and up:
-                    if piece == 20 or piece == 21:
-                        while temp_rnk != rnk:
-                            resolves.append(get_square_index(file=fl, rank=temp_rnk))
-                            temp_rnk -= 1
+                    else:
+                        potential_pin = square
+                else:
+                    if 20 <= board[square][1] <= 21:
+                        resolves = ("0" * square) + ("1" * (white_king_pos - square)) + ("0" * (64 - white_king_pos))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
                         break
-                    up = False
-                if temp_fl < fl and temp_rnk == rnk and left:
-                    if piece == 20 or piece == 21:
-                        while temp_fl != fl:
-                            resolves.append(get_square_index(file=temp_fl, rank=rnk))
-                            temp_fl += 1
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[white_king_pos][6]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] >= 17:
+                        if board[square][1] == 20 or board[square][1] == 21:
+                            check = ("0" * square) + ("10000000" * ((white_king_pos - square) // 8)) + (
+                                    "0" * (64 - white_king_pos))
                         break
-                    left = False
-                if temp_fl == fl and temp_rnk < rnk and down:
-                    if piece == 20 or piece == 21:
-                        while temp_rnk != rnk:
-                            resolves.append(get_square_index(file=fl, rank=temp_rnk))
-                            temp_rnk += 1
+                    else:
+                        potential_pin = square
+                else:
+                    if 20 <= board[square][1] <= 21:
+                        resolves = ("0" * square) + ("10000000" * ((white_king_pos - square) // 8)) + (
+                                "0" * (64 - white_king_pos))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
                         break
-                    down = False
-    if turn_to_move == "b":
-        for sqr in possible_sqr[4][king_pos]:
-            temp_fl, temp_rnk = get_file_n_rank(sqr)
-            piece = board[sqr][1]
-            if piece == 9:
-                if temp_fl > fl and temp_rnk < rnk:
-                    resolves.append(sqr)
-                    if en_passant_target == sqr - 8:
-                        resolves.append(en_passant_target)
-                if temp_fl < fl and temp_rnk < rnk:
-                    resolves.append(sqr)
-                    if en_passant_target == sqr - 8:
-                        resolves.append(en_passant_target)
-        for sqr in possible_sqr[0][king_pos]:
-            piece = board[sqr][1]
-            if piece == 10:
-                resolves.append(sqr)
-                break
-        right_up, left_up, left_down, right_down = True, True, True, True
-        right, up, left, down = True, True, True, True
-        for sqr in possible_sqr[3][king_pos]:
-            temp_fl, temp_rnk = get_file_n_rank(sqr)
-            piece = board[sqr][1]
-            if piece != 0:
-                if temp_fl > fl and temp_rnk > rnk and right_up:
-                    if piece == 11 or piece == 13:
-                        while (temp_fl != fl) and (temp_rnk != rnk):
-                            resolves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                            temp_fl -= 1
-                            temp_rnk -= 1
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[white_king_pos][1]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] >= 17:
+                        if board[square][1] == 19 or board[square][1] == 21:
+                            check = ("0" * (white_king_pos + 1)) + ("000000001" * ((square - white_king_pos) // 9)) + (
+                                    "0" * (63 - square))
                         break
-                    right_up = False
-                if temp_fl < fl and temp_rnk > rnk and left_up:
-                    if piece == 11 or piece == 13:
-                        while (temp_fl != fl) and (temp_rnk != rnk):
-                            resolves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                            temp_fl += 1
-                            temp_rnk -= 1
+                    else:
+                        potential_pin = square
+                else:
+                    if board[square][1] == 19 or board[square][1] == 21:
+                        resolves = ("0" * (white_king_pos + 1)) + ("000000001" * ((square - white_king_pos) // 9)) + (
+                                "0" * (63 - square))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
                         break
-                    left_up = False
-                if temp_fl < fl and temp_rnk < rnk and left_down:
-                    if piece == 11 or piece == 13:
-                        while (temp_fl != fl) and (temp_rnk != rnk):
-                            resolves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                            temp_fl += 1
-                            temp_rnk += 1
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[white_king_pos][3]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] >= 17:
+                        if board[square][1] == 19 or board[square][1] == 21:
+                            check = ("0" * (white_king_pos + 1)) + ("0000001" * ((square - white_king_pos) // 7)) + (
+                                    "0" * (63 - square))
                         break
-                    left_down = False
-                if temp_fl > fl and temp_rnk < rnk and right_down:
-                    if piece == 11 or piece == 13:
-                        while (temp_fl != fl) and (temp_rnk != rnk):
-                            resolves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                            temp_fl -= 1
-                            temp_rnk += 1
+                    else:
+                        potential_pin = square
+                else:
+                    if board[square][1] == 19 or board[square][1] == 21:
+                        resolves = ("0" * (white_king_pos + 1)) + ("0000001" * ((square - white_king_pos) // 7)) + (
+                                "0" * (63 - square))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
                         break
-                    right_down = False
-                if temp_fl > fl and temp_rnk == rnk and right:
-                    if piece == 12 or piece == 13:
-                        while temp_fl != fl:
-                            resolves.append(get_square_index(file=temp_fl, rank=rnk))
-                            temp_fl -= 1
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[white_king_pos][5]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] >= 17:
+                        if board[square][1] == 19 or board[square][1] == 21:
+                            check = ("0" * square) + ("100000000" * ((white_king_pos - square) // 9)) + (
+                                    "0" * (64 - white_king_pos))
                         break
-                    right = False
-                if temp_fl == fl and temp_rnk > rnk and up:
-                    if piece == 12 or piece == 13:
-                        while temp_rnk != rnk:
-                            resolves.append(get_square_index(file=fl, rank=temp_rnk))
-                            temp_rnk -= 1
+                    else:
+                        potential_pin = square
+                else:
+                    if board[square][1] == 19 or board[square][1] == 21:
+                        resolves = ("0" * square) + ("100000000" * ((white_king_pos - square) // 9)) + (
+                                "0" * (64 - white_king_pos))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
                         break
-                    up = False
-                if temp_fl < fl and temp_rnk == rnk and left:
-                    if piece == 12 or piece == 13:
-                        while temp_fl != fl:
-                            resolves.append(get_square_index(file=temp_fl, rank=rnk))
-                            temp_fl += 1
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[white_king_pos][7]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] >= 17:
+                        if board[square][1] == 19 or board[square][1] == 21:
+                            check = ("0" * square) + ("1000000" * ((white_king_pos - square) // 7)) + (
+                                    "0" * (64 - white_king_pos))
                         break
-                    left = False
-                if temp_fl == fl and temp_rnk < rnk and down:
-                    if piece == 12 or piece == 13:
-                        while temp_rnk != rnk:
-                            resolves.append(get_square_index(file=fl, rank=temp_rnk))
-                            temp_rnk += 1
+                    else:
+                        potential_pin = square
+                else:
+                    if board[square][1] == 19 or board[square][1] == 21:
+                        resolves = ("0" * square) + ("1000000" * ((white_king_pos - square) // 7)) + (
+                                "0" * (64 - white_king_pos))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
                         break
-                    down = False
-    return resolves
+        # If in check, check as well if knight or pawn is giving the check
+        if in_check and check == "":
+            for square in knight_moves[white_king_pos]:
+                if board[square][1] == 18:
+                    check = ("0" * square) + "1" + ("0" * (63 - square))
+                    break
+            for square in white_pawn_moves[white_king_pos][0]:
+                if board[square][1] == 17:
+                    check = ("0" * square) + "1" + ("0" * (63 - square))
+            for square in white_pawn_moves[white_king_pos][2]:
+                if board[square][1] == 17:
+                    check = ("0" * square) + "1" + ("0" * (63 - square))
+
+    # IF BLACK TO MOVE -----------
+    else:
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[black_king_pos][0]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] <= 14:
+                        if board[square][1] == 12 or board[square][1] == 13:
+                            check = ("0" * (black_king_pos + 1)) + ("1" * (square - black_king_pos)) + (
+                                    "0" * (63 - square))
+                        break
+                    else:
+                        potential_pin = square
+                else:
+                    if 12 <= board[square][1] <= 13:
+                        resolves = ("0" * (black_king_pos + 1)) + ("1" * (square - black_king_pos)) + (
+                                "0" * (63 - square))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
+                        break
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[black_king_pos][2]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] <= 14:
+                        if board[square][1] == 12 or board[square][1] == 13:
+                            check = ("0" * (black_king_pos + 1)) + ("00000001" * ((square - black_king_pos) // 8)) + (
+                                    "0" * (63 - square))
+                        break
+                    else:
+                        potential_pin = square
+                else:
+                    if 12 <= board[square][1] <= 13:
+                        resolves = ("0" * (black_king_pos + 1)) + ("00000001" * ((square - black_king_pos) // 8)) + (
+                                "0" * (63 - square))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
+                        break
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[black_king_pos][4]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] <= 14:
+                        if board[square][1] == 12 or board[square][1] == 13:
+                            check = ("0" * square) + ("1" * (black_king_pos - square)) + ("0" * (64 - black_king_pos))
+                        break
+                    else:
+                        potential_pin = square
+                else:
+                    if 12 <= board[square][1] <= 13:
+                        resolves = ("0" * square) + ("1" * (black_king_pos - square)) + ("0" * (64 - black_king_pos))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
+                        break
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[black_king_pos][6]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] <= 14:
+                        if board[square][1] == 12 or board[square][1] == 13:
+                            check = ("0" * square) + ("10000000" * ((black_king_pos - square) // 8)) + (
+                                    "0" * (64 - black_king_pos))
+                        break
+                    else:
+                        potential_pin = square
+                else:
+                    if 12 <= board[square][1] <= 13:
+                        resolves = ("0" * square) + ("10000000" * ((black_king_pos - square) // 8)) + (
+                                "0" * (64 - black_king_pos))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
+                        break
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[black_king_pos][1]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] <= 14:
+                        if board[square][1] == 11 or board[square][1] == 13:
+                            check = ("0" * (black_king_pos + 1)) + ("000000001" * ((square - black_king_pos) // 9)) + (
+                                    "0" * (63 - square))
+                        break
+                    else:
+                        potential_pin = square
+                else:
+                    if board[square][1] == 11 or board[square][1] == 13:
+                        resolves = ("0" * (black_king_pos + 1)) + ("000000001" * ((square - black_king_pos) // 9)) + (
+                                "0" * (63 - square))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
+                        break
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[black_king_pos][3]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] <= 14:
+                        if board[square][1] == 11 or board[square][1] == 13:
+                            check = ("0" * (black_king_pos + 1)) + ("0000001" * ((square - black_king_pos) // 7)) + (
+                                    "0" * (63 - square))
+                        break
+                    else:
+                        potential_pin = square
+                else:
+                    if board[square][1] == 11 or board[square][1] == 13:
+                        resolves = ("0" * (black_king_pos + 1)) + ("0000001" * ((square - black_king_pos) // 7)) + (
+                                "0" * (63 - square))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
+                        break
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[black_king_pos][5]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] <= 14:
+                        if board[square][1] == 11 or board[square][1] == 13:
+                            check = ("0" * square) + ("100000000" * ((black_king_pos - square) // 9)) + (
+                                    "0" * (64 - black_king_pos))
+                        break
+                    else:
+                        potential_pin = square
+                else:
+                    if board[square][1] == 11 or board[square][1] == 13:
+                        resolves = ("0" * square) + ("100000000" * ((black_king_pos - square) // 9)) + (
+                                "0" * (64 - black_king_pos))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
+                        break
+        # -------------------------------------------------------------------------------------------------------------
+        potential_pin = DEFAULT_int
+        for square in queen_moves[black_king_pos][7]:
+            if board[square][1] != 0:
+                if potential_pin == DEFAULT_int:
+                    if board[square][1] <= 14:
+                        if board[square][1] == 11 or board[square][1] == 13:
+                            check = ("0" * square) + ("1000000" * ((black_king_pos - square) // 7)) + (
+                                    "0" * (64 - black_king_pos))
+                        break
+                    else:
+                        potential_pin = square
+                else:
+                    if board[square][1] == 11 or board[square][1] == 13:
+                        resolves = ("0" * square) + ("1000000" * ((black_king_pos - square) // 7)) + (
+                                "0" * (64 - black_king_pos))
+                        pinned_piece = board[potential_pin][1]
+                        pins[segment_map[pinned_piece]].append(resolves)
+                    else:
+                        break
+        # If in check, check as well if knight or pawn is giving the check
+        if in_check and check == "":
+            for square in knight_moves[black_king_pos]:
+                if board[square][1] == 10:
+                    check = ("0" * square) + "1" + ("0" * (63 - square))
+                    break
+            for square in black_pawn_moves[black_king_pos][0]:
+                if board[square][1] == 9:
+                    check = ("0" * square) + "1" + ("0" * (63 - square))
+            for square in black_pawn_moves[black_king_pos][2]:
+                if board[square][1] == 9:
+                    check = ("0" * square) + "1" + ("0" * (63 - square))
+
+    if in_check:
+        return pins, check
+    else:
+        return pins
 
 
-def piece_pins():
-    fl, rnk = get_file_n_rank(king_pos)
-    right_up, left_up, left_down, right_down = True, True, True, True
-    right, up, left, down = True, True, True, True
-    po_ru_p, po_lu_p, po_ld_p, po_rd_p = DEFAULT_int, DEFAULT_int, DEFAULT_int, DEFAULT_int
-    po_r_p, po_u_p, po_l_p, po_d_p = DEFAULT_int, DEFAULT_int, DEFAULT_int, DEFAULT_int
-    ru_pin_moves, lu_pin_moves, ld_pin_moves, rd_pin_moves = [], [], [], []
-    r_pin_moves, u_pin_moves, l_pin_moves, d_pin_moves = [], [], [], []
-
-    if turn_to_move == "w":
-        for sqr in possible_sqr[3][king_pos]:
-            temp_fl, temp_rnk = get_file_n_rank(sqr)
-            piece = board[sqr][1]
-            # ---------------------------------------------------------------------------
-            if temp_fl > fl and temp_rnk > rnk and right_up:
-                if piece != 0 and po_ru_p != DEFAULT_int:
-                    right_up = False
-                if piece > 16 and piece != 0 and po_ru_p == DEFAULT_int:
-                    right_up = False
-                if piece < 14 and piece != 0 and po_ru_p == DEFAULT_int:
-                    po_ru_p = sqr
-                if (piece == 19 or piece == 21) and po_ru_p != DEFAULT_int:
-                    while temp_fl != fl and temp_rnk != rnk:
-                        ru_pin_moves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                        temp_fl -= 1
-                        temp_rnk -= 1
-            # ---------------------------------------------------------------------------
-            if temp_fl < fl and temp_rnk > rnk and left_up:
-                if piece != 0 and po_lu_p != DEFAULT_int:
-                    left_up = False
-                if piece > 16 and piece != 0 and po_lu_p == DEFAULT_int:
-                    left_up = False
-                if piece < 14 and piece != 0 and po_lu_p == DEFAULT_int:
-                    po_lu_p = sqr
-                if (piece == 19 or piece == 21) and po_lu_p != DEFAULT_int:
-                    while temp_fl != fl and temp_rnk != rnk:
-                        lu_pin_moves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                        temp_fl += 1
-                        temp_rnk -= 1
-            # ---------------------------------------------------------------------------
-            if temp_fl < fl and temp_rnk < rnk and left_down:
-                if piece != 0 and po_ld_p != DEFAULT_int:
-                    left_down = False
-                if piece > 16 and piece != 0 and po_ld_p == DEFAULT_int:
-                    left_down = False
-                if piece < 14 and piece != 0 and po_ld_p == DEFAULT_int:
-                    po_ld_p = sqr
-                if (piece == 19 or piece == 21) and po_ld_p != DEFAULT_int:
-                    while temp_fl != fl and temp_rnk != rnk:
-                        ld_pin_moves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                        temp_fl += 1
-                        temp_rnk += 1
-            # ---------------------------------------------------------------------------
-            if temp_fl > fl and temp_rnk < rnk and right_down:
-                if piece != 0 and po_rd_p != DEFAULT_int:
-                    right_down = False
-                if piece > 16 and piece != 0 and po_rd_p == DEFAULT_int:
-                    right_down = False
-                if piece < 14 and piece != 0 and po_rd_p == DEFAULT_int:
-                    po_rd_p = sqr
-                if (piece == 19 or piece == 21) and po_rd_p != DEFAULT_int:
-                    while temp_fl != fl and temp_rnk != rnk:
-                        rd_pin_moves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                        temp_fl -= 1
-                        temp_rnk += 1
-            # ---------------------------------------------------------------------------
-            if temp_fl > fl and temp_rnk == rnk and right:
-                if piece != 0 and po_r_p != DEFAULT_int:
-                    right = False
-                if piece > 16 and piece != 0 and po_r_p == DEFAULT_int:
-                    right = False
-                if piece < 14 and piece != 0 and po_r_p == DEFAULT_int:
-                    po_r_p = sqr
-                if (piece == 20 or piece == 21) and po_r_p != DEFAULT_int:
-                    while temp_fl != fl:
-                        r_pin_moves.append(get_square_index(file=temp_fl, rank=rnk))
-                        temp_fl -= 1
-            # ---------------------------------------------------------------------------
-            if temp_fl == fl and temp_rnk > rnk and up:
-                if piece != 0 and po_u_p != DEFAULT_int:
-                    up = False
-                if piece > 16 and piece != 0 and po_u_p == DEFAULT_int:
-                    up = False
-                if piece < 14 and piece != 0 and po_u_p == DEFAULT_int:
-                    po_u_p = sqr
-                if (piece == 20 or piece == 21) and po_u_p != DEFAULT_int:
-                    while temp_rnk != rnk:
-                        u_pin_moves.append(get_square_index(file=fl, rank=temp_rnk))
-                        temp_rnk -= 1
-            # ---------------------------------------------------------------------------
-            if temp_fl < fl and temp_rnk == rnk and left:
-                if piece != 0 and po_l_p != DEFAULT_int:
-                    left = False
-                if piece > 16 and piece != 0 and po_l_p == DEFAULT_int:
-                    left = False
-                if piece < 14 and piece != 0 and po_l_p == DEFAULT_int:
-                    po_l_p = sqr
-                if (piece == 20 or piece == 21) and po_l_p != DEFAULT_int:
-                    while temp_fl != fl:
-                        l_pin_moves.append(get_square_index(file=temp_fl, rank=rnk))
-                        temp_fl += 1
-            # ---------------------------------------------------------------------------
-            if temp_fl == fl and temp_rnk < rnk and down:
-                if piece != 0 and po_d_p != DEFAULT_int:
-                    down = False
-                if piece > 16 and piece != 0 and po_d_p == DEFAULT_int:
-                    down = False
-                if piece < 14 and piece != 0 and po_d_p == DEFAULT_int:
-                    po_d_p = sqr
-                if (piece == 20 or piece == 21) and po_d_p != DEFAULT_int:
-                    while temp_rnk != rnk:
-                        d_pin_moves.append(get_square_index(file=fl, rank=temp_rnk))
-                        temp_rnk += 1
-
-    if turn_to_move == "b":
-        for sqr in possible_sqr[3][king_pos]:
-            temp_fl, temp_rnk = get_file_n_rank(sqr)
-            piece = board[sqr][1]
-            # ---------------------------------------------------------------------------
-            if temp_fl > fl and temp_rnk > rnk and right_up:
-                if piece != 0 and po_ru_p != DEFAULT_int:
-                    right_up = False
-                if piece <= 14 and piece != 0 and po_ru_p == DEFAULT_int:
-                    right_up = False
-                if piece > 16 and piece != 0 and po_ru_p == DEFAULT_int:
-                    po_ru_p = sqr
-                if (piece == 11 or piece == 13) and po_ru_p != DEFAULT_int:
-                    while temp_fl != fl and temp_rnk != rnk:
-                        ru_pin_moves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                        temp_fl -= 1
-                        temp_rnk -= 1
-            # ---------------------------------------------------------------------------
-            if temp_fl < fl and temp_rnk > rnk and left_up:
-                if piece != 0 and po_lu_p != DEFAULT_int:
-                    left_up = False
-                if piece <= 14 and piece != 0 and po_lu_p == DEFAULT_int:
-                    left_up = False
-                if piece > 16 and piece != 0 and po_lu_p == DEFAULT_int:
-                    po_lu_p = sqr
-                if (piece == 11 or piece == 13) and po_lu_p != DEFAULT_int:
-                    while temp_fl != fl and temp_rnk != rnk:
-                        lu_pin_moves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                        temp_fl += 1
-                        temp_rnk -= 1
-            # ---------------------------------------------------------------------------
-            if temp_fl < fl and temp_rnk < rnk and left_down:
-                if piece != 0 and po_ld_p != DEFAULT_int:
-                    left_down = False
-                if piece <= 14 and piece != 0 and piece != 0 and po_ld_p == DEFAULT_int:
-                    left_down = False
-                if piece > 16 and piece != 0 and po_ld_p == DEFAULT_int:
-                    po_ld_p = sqr
-                if (piece == 11 or piece == 13) and po_ld_p != DEFAULT_int:
-                    while temp_fl != fl and temp_rnk != rnk:
-                        ld_pin_moves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                        temp_fl += 1
-                        temp_rnk += 1
-            # ---------------------------------------------------------------------------
-            if temp_fl > fl and temp_rnk < rnk and right_down:
-                if piece != 0 and po_rd_p != DEFAULT_int:
-                    right_down = False
-                if piece <= 14 and piece != 0 and po_rd_p == DEFAULT_int:
-                    right_down = False
-                if piece > 16 and piece != 0 and po_rd_p == DEFAULT_int:
-                    po_rd_p = sqr
-                if (piece == 11 or piece == 13) and po_rd_p != DEFAULT_int:
-                    while temp_fl != fl and temp_rnk != rnk:
-                        rd_pin_moves.append(get_square_index(file=temp_fl, rank=temp_rnk))
-                        temp_fl -= 1
-                        temp_rnk += 1
-            # ---------------------------------------------------------------------------
-            if temp_fl > fl and temp_rnk == rnk and right:
-                if piece != 0 and po_r_p != DEFAULT_int:
-                    right = False
-                if piece <= 14 and piece != 0 and po_r_p == DEFAULT_int:
-                    right = False
-                if piece > 16 and piece != 0 and po_r_p == DEFAULT_int:
-                    po_r_p = sqr
-                if (piece == 12 or piece == 13) and po_r_p != DEFAULT_int:
-                    while temp_fl != fl:
-                        r_pin_moves.append(get_square_index(file=temp_fl, rank=rnk))
-                        temp_fl -= 1
-            # ---------------------------------------------------------------------------
-            if temp_fl == fl and temp_rnk > rnk and up:
-                if piece != 0 and po_u_p != DEFAULT_int:
-                    up = False
-                if piece <= 14 and piece != 0 and po_u_p == DEFAULT_int:
-                    up = False
-                if piece > 16 and piece != 0 and po_u_p == DEFAULT_int:
-                    po_u_p = sqr
-                if (piece == 12 or piece == 13) and po_u_p != DEFAULT_int:
-                    while temp_rnk != rnk:
-                        u_pin_moves.append(get_square_index(file=fl, rank=temp_rnk))
-                        temp_rnk -= 1
-            # ---------------------------------------------------------------------------
-            if temp_fl < fl and temp_rnk == rnk and left:
-                if piece != 0 and po_l_p != DEFAULT_int:
-                    left = False
-                if piece <= 14 and piece != 0 and po_l_p == DEFAULT_int:
-                    left = False
-                if piece > 16 and piece != 0 and po_l_p == DEFAULT_int:
-                    po_l_p = sqr
-                if (piece == 12 or piece == 13) and po_l_p != DEFAULT_int:
-                    while temp_fl != fl:
-                        l_pin_moves.append(get_square_index(file=temp_fl, rank=rnk))
-                        temp_fl += 1
-            # ---------------------------------------------------------------------------
-            if temp_fl == fl and temp_rnk < rnk and down:
-                if piece != 0 and po_d_p != DEFAULT_int:
-                    down = False
-                if piece <= 14 and piece != 0 and po_d_p == DEFAULT_int:
-                    down = False
-                if piece > 16 and piece != 0 and po_d_p == DEFAULT_int:
-                    po_d_p = sqr
-                if (piece == 12 or piece == 13) and po_d_p != DEFAULT_int:
-                    while temp_rnk != rnk:
-                        d_pin_moves.append(get_square_index(file=fl, rank=temp_rnk))
-                        temp_rnk += 1
-
-    pin = [po_ru_p, po_lu_p, po_ld_p, po_rd_p,
-           po_r_p, po_u_p, po_l_p, po_d_p]
-    resolve = [ru_pin_moves, lu_pin_moves, ld_pin_moves, rd_pin_moves,
-               r_pin_moves, u_pin_moves, l_pin_moves, d_pin_moves]
-
-    pin_n_resolve = []
-    for val in range(8):
-        if not resolve[val]:
-            pin_n_resolve.append([DEFAULT_int, resolve[val]])
-        else:
-            pin_n_resolve.append([pin[val], resolve[val]])
-    return pin_n_resolve
-
-
-def legal_moves(square, piece):
+# For legal moves ------------------------------------------------------------------------------------------------------
+def legal_white_pawn_moves(square, in_check, pin_list, check_list=DEFAULT_tup):
     global board
-    attacked, check, doublecheck = attacked_squares(), False, False
-    if attacked[king_pos] != 0:
-        if attacked[king_pos] == 1:
-            check = True
+    leg = []
+    pinned = False
+    for move in white_pawn_moves[square][0]:
+        if board[move][1] > 16 or move == en_passant_target:
+            leg.append(move)
+    for move in white_pawn_moves[square][1]:
+        if board[move][1] != 0:
+            break
         else:
-            doublecheck = True
-    pins = piece_pins()
-    resolve_squares = []
-    if check:
-        resolve_squares = check_resolves()
-    legal_piece_moves = []
+            leg.append(move)
+    for move in white_pawn_moves[square][2]:
+        if board[move][1] > 16 or move == en_passant_target:
+            leg.append(move)
+    for bit_board in pin_list[0]:
+        if bit_board[square] == "1":
+            pinned = True
+            hold = []
+            for move in leg:
+                if bit_board[move] == "1":
+                    hold.append(move)
+            leg = hold
+    # EN PASSANT DISCOVERED CHECK ON SELF FIX
+    if 31 < white_king_pos < 40:
+        if 39 < en_passant_target < 48:
+            for move in white_pawn_moves[square][0]:
+                if move == en_passant_target:
+                    board[square][1], board[move][1], board[move - 8][1] = 0, 9, 0
+                    for right_dir in rook_moves[white_king_pos][0]:
+                        if board[right_dir][1] != 0:
+                            if board[right_dir][1] == 20 or board[right_dir][1] == 21:
+                                leg.remove(move)
+                            break
+                    for left_dir in rook_moves[white_king_pos][2]:
+                        if board[left_dir][1] != 0:
+                            if board[left_dir][1] == 20 or board[left_dir][1] == 21:
+                                leg.remove(move)
+                            break
+                    board[square][1], board[move][1], board[move - 8][1] = 9, 0, 17
+    if in_check:
+        if pinned:
+            leg = []
+        else:
+            hold = []
+            for move in leg:
+                if check_list[move] == "1":
+                    hold.append(move)
+            leg = hold
+            # if a pawn causing a check can be captured en passant
+            if en_passant_target != DEFAULT_int:
+                for sqr in white_pawn_moves[white_king_pos][0]:
+                    if board[sqr][1] == 17 and en_passant_target == (sqr + 8):
+                        leg.append(en_passant_target)
+                for sqr in white_pawn_moves[white_king_pos][2]:
+                    if board[sqr][1] == 17 and en_passant_target == (sqr + 8):
+                        leg.append(en_passant_target)
+    return leg
 
-    # Legal moves for white pieces
-    if piece != 0 and turn_to_move == "w":
-        # -----------------------------------------------------------------
-        if piece == 9:
-            wp_fl = get_file_n_rank(square)[0]
-            up = True
-            for wp_sqr in possible_sqr[5][square]:
-                if en_passant_target == wp_sqr:
-                    legal_piece_moves.append(en_passant_target)
-                    if 32 <= king_pos <= 39:
-                        left_dir = True
-                        right_dir = True
-                        board[en_passant_target][1] = 9
-                        board[square][1] = 0
-                        board[en_passant_target - 8][1] = 0
-                        temp_kng_fl, kng_rnk = get_file_n_rank(king_pos)
-                        while temp_kng_fl > 1 and left_dir:
-                            temp_kng_fl -= 1
-                            check_for_piece = get_square_index(file=temp_kng_fl, rank=kng_rnk)
-                            if board[check_for_piece][1] != 0:
-                                if board[check_for_piece][1] == 20 or board[check_for_piece][1] == 21:
-                                    legal_piece_moves.remove(en_passant_target)
-                                left_dir = False
-                        temp_kng_fl, kng_rnk = get_file_n_rank(king_pos)
-                        while temp_kng_fl < 8 and right_dir:
-                            temp_kng_fl += 1
-                            check_for_piece = get_square_index(file=temp_kng_fl, rank=kng_rnk)
-                            if board[check_for_piece][1] != 0:
-                                if board[check_for_piece][1] == 20 or board[check_for_piece][1] == 21:
-                                    legal_piece_moves.remove(en_passant_target)
-                                right_dir = False
-                        board[en_passant_target][1] = 0
-                        board[square][1] = 9
-                        board[en_passant_target - 8][1] = 17
-                temp_wp_fl = get_file_n_rank(wp_sqr)[0]
-                if board[wp_sqr][1] != 0 and wp_fl == temp_wp_fl:
-                    up = False
-                if board[wp_sqr][1] > 16 and board[wp_sqr][1] != 0 and wp_fl != temp_wp_fl:
-                    legal_piece_moves.append(wp_sqr)
-                if board[wp_sqr][1] == 0 and wp_fl == temp_wp_fl and up:
-                    legal_piece_moves.append(wp_sqr)
-            # For Piece pins
-            temp_hold = []
-            for wp_pin in pins:
-                if wp_pin[0] == square:
-                    for move in legal_piece_moves:
-                        if move in wp_pin[1]:
-                            temp_hold.append(move)
-                    legal_piece_moves = temp_hold
-            # For checks
-            if check:
-                temp_hold = []
-                for wp_resolve in legal_piece_moves:
-                    if wp_resolve in resolve_squares:
-                        temp_hold.append(wp_resolve)
-                legal_piece_moves = temp_hold
-            # For double checks
-            if doublecheck:
-                legal_piece_moves = []
-        # -----------------------------------------------------------------
-        if piece == 10:
-            for wn_sqr in possible_sqr[0][square]:
-                if board[wn_sqr][1] > 14 or board[wn_sqr][1] == 0:
-                    legal_piece_moves.append(wn_sqr)
-            # For Piece pins
-            temp_hold = []
-            for wn_pin in pins:
-                if wn_pin[0] == square:
-                    for move in legal_piece_moves:
-                        if move in wn_pin[1]:
-                            temp_hold.append(move)
-                    legal_piece_moves = temp_hold
-            # For checks
-            if check:
-                temp_hold = []
-                for wn_resolve in legal_piece_moves:
-                    if wn_resolve in resolve_squares:
-                        temp_hold.append(wn_resolve)
-                legal_piece_moves = temp_hold
-            # For double checks
-            if doublecheck:
-                legal_piece_moves = []
-        # -----------------------------------------------------------------
-        if piece == 11:
-            fl, rnk = get_file_n_rank(square)
-            right_up, left_up, left_down, right_down = True, True, True, True
-            for wb_sqr in possible_sqr[1][square]:
-                temp_fl, temp_rnk = get_file_n_rank(wb_sqr)
-                if board[wb_sqr][1] <= 14 and board[wb_sqr][1] != 0:
-                    if temp_fl > fl and temp_rnk > rnk:
-                        right_up = False
-                    if temp_fl < fl and temp_rnk > rnk:
-                        left_up = False
-                    if temp_fl < fl and temp_rnk < rnk:
-                        left_down = False
-                    if temp_fl > fl and temp_rnk < rnk:
-                        right_down = False
-                if board[wb_sqr][1] > 16 and board[wb_sqr][1] != 0:
-                    if right_up and temp_fl > fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wb_sqr)
-                        right_up = False
-                    if left_up and temp_fl < fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wb_sqr)
-                        left_up = False
-                    if left_down and temp_fl < fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wb_sqr)
-                        left_down = False
-                    if right_down and temp_fl > fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wb_sqr)
-                        right_down = False
-                if board[wb_sqr][1] == 0:
-                    if right_up and temp_fl > fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wb_sqr)
-                    if left_up and temp_fl < fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wb_sqr)
-                    if left_down and temp_fl < fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wb_sqr)
-                    if right_down and temp_fl > fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wb_sqr)
-            # For Piece pins
-            temp_hold = []
-            for wb_pin in pins:
-                if wb_pin[0] == square:
-                    for move in legal_piece_moves:
-                        if move in wb_pin[1]:
-                            temp_hold.append(move)
-                    legal_piece_moves = temp_hold
-            # For checks
-            if check:
-                temp_hold = []
-                for wb_resolve in legal_piece_moves:
-                    if wb_resolve in resolve_squares:
-                        temp_hold.append(wb_resolve)
-                legal_piece_moves = temp_hold
-            # For double checks
-            if doublecheck:
-                legal_piece_moves = []
-        # -----------------------------------------------------------------
-        if piece == 12:
-            fl, rnk = get_file_n_rank(square)
-            right, left, up, down = True, True, True, True
-            for wr_sqr in possible_sqr[2][square]:
-                temp_fl, temp_rnk = get_file_n_rank(wr_sqr)
-                if board[wr_sqr][1] <= 14 and board[wr_sqr][1] != 0:
-                    if temp_fl > fl and temp_rnk == rnk:
-                        right = False
-                    if temp_fl == fl and temp_rnk > rnk:
-                        up = False
-                    if temp_fl < fl and temp_rnk == rnk:
-                        left = False
-                    if temp_fl == fl and temp_rnk < rnk:
-                        down = False
-                if board[wr_sqr][1] > 16 and board[wr_sqr][1] != 0:
-                    if right and temp_fl > fl and temp_rnk == rnk:
-                        legal_piece_moves.append(wr_sqr)
-                        right = False
-                    if up and temp_fl == fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wr_sqr)
-                        up = False
-                    if left and temp_fl < fl and temp_rnk == rnk:
-                        legal_piece_moves.append(wr_sqr)
-                        left = False
-                    if down and temp_fl == fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wr_sqr)
-                        down = False
-                if board[wr_sqr][1] == 0:
-                    if right and temp_fl > fl and temp_rnk == rnk:
-                        legal_piece_moves.append(wr_sqr)
-                    if up and temp_fl == fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wr_sqr)
-                    if left and temp_fl < fl and temp_rnk == rnk:
-                        legal_piece_moves.append(wr_sqr)
-                    if down and temp_fl == fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wr_sqr)
-            # For Piece pins
-            temp_hold = []
-            for wr_pin in pins:
-                if wr_pin[0] == square:
-                    for move in legal_piece_moves:
-                        if move in wr_pin[1]:
-                            temp_hold.append(move)
-                    legal_piece_moves = temp_hold
-            # For checks
-            if check:
-                temp_hold = []
-                for wr_resolve in legal_piece_moves:
-                    if wr_resolve in resolve_squares:
-                        temp_hold.append(wr_resolve)
-                legal_piece_moves = temp_hold
-            # For double checks
-            if doublecheck:
-                legal_piece_moves = []
-        # -----------------------------------------------------------------
-        if piece == 13:
-            fl, rnk = get_file_n_rank(square)
-            right_up, left_up, left_down, right_down = True, True, True, True
-            right, left, up, down = True, True, True, True
-            for wq_sqr in possible_sqr[3][square]:
-                temp_fl, temp_rnk = get_file_n_rank(wq_sqr)
-                if board[wq_sqr][1] <= 14 and board[wq_sqr][1] != 0:
-                    if temp_fl > fl and temp_rnk > rnk:
-                        right_up = False
-                    if temp_fl < fl and temp_rnk > rnk:
-                        left_up = False
-                    if temp_fl < fl and temp_rnk < rnk:
-                        left_down = False
-                    if temp_fl > fl and temp_rnk < rnk:
-                        right_down = False
-                if board[wq_sqr][1] > 16 and board[wq_sqr][1] != 0:
-                    if right_up and temp_fl > fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wq_sqr)
-                        right_up = False
-                    if left_up and temp_fl < fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wq_sqr)
-                        left_up = False
-                    if left_down and temp_fl < fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wq_sqr)
-                        left_down = False
-                    if right_down and temp_fl > fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wq_sqr)
-                        right_down = False
-                if board[wq_sqr][1] == 0:
-                    if right_up and temp_fl > fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wq_sqr)
-                    if left_up and temp_fl < fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wq_sqr)
-                    if left_down and temp_fl < fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wq_sqr)
-                    if right_down and temp_fl > fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wq_sqr)
-                if board[wq_sqr][1] <= 14 and board[wq_sqr][1] != 0:
-                    if temp_fl > fl and temp_rnk == rnk:
-                        right = False
-                    if temp_fl == fl and temp_rnk > rnk:
-                        up = False
-                    if temp_fl < fl and temp_rnk == rnk:
-                        left = False
-                    if temp_fl == fl and temp_rnk < rnk:
-                        down = False
-                if board[wq_sqr][1] > 16 and board[wq_sqr][1] != 0:
-                    if right and temp_fl > fl and temp_rnk == rnk:
-                        legal_piece_moves.append(wq_sqr)
-                        right = False
-                    if up and temp_fl == fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wq_sqr)
-                        up = False
-                    if left and temp_fl < fl and temp_rnk == rnk:
-                        legal_piece_moves.append(wq_sqr)
-                        left = False
-                    if down and temp_fl == fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wq_sqr)
-                        down = False
-                if board[wq_sqr][1] == 0:
-                    if right and temp_fl > fl and temp_rnk == rnk:
-                        legal_piece_moves.append(wq_sqr)
-                    if up and temp_fl == fl and temp_rnk > rnk:
-                        legal_piece_moves.append(wq_sqr)
-                    if left and temp_fl < fl and temp_rnk == rnk:
-                        legal_piece_moves.append(wq_sqr)
-                    if down and temp_fl == fl and temp_rnk < rnk:
-                        legal_piece_moves.append(wq_sqr)
-            # For Piece pins
-            temp_hold = []
-            for wq_pin in pins:
-                if wq_pin[0] == square:
-                    for move in legal_piece_moves:
-                        if move in wq_pin[1]:
-                            temp_hold.append(move)
-                    legal_piece_moves = temp_hold
-            # For checks
-            if check:
-                temp_hold = []
-                for wq_resolve in legal_piece_moves:
-                    if wq_resolve in resolve_squares:
-                        temp_hold.append(wq_resolve)
-                legal_piece_moves = temp_hold
-            # For double checks
-            if doublecheck:
-                legal_piece_moves = []
-        # -----------------------------------------------------------------
-        if piece == 14:
-            for wk_sqr in possible_sqr[4][square]:
-                if board[wk_sqr][1] > 14 or board[wk_sqr][1] == 0:
-                    if attacked[wk_sqr] == 0:
-                        legal_piece_moves.append(wk_sqr)
 
-    # Legal moves for black pieces
-    if piece != 0 and turn_to_move == "b":
-        # -----------------------------------------------------------------
-        if piece == 17:
-            bp_fl = get_file_n_rank(square)[0]
-            down = True
-            for bp_sqr in possible_sqr[6][square]:
-                if en_passant_target == bp_sqr:
-                    legal_piece_moves.append(en_passant_target)
-                    if 24 <= king_pos <= 31:
-                        left_dir = True
-                        right_dir = True
-                        board[en_passant_target][1] = 17
-                        board[square][1] = 0
-                        board[en_passant_target + 8][1] = 0
-                        temp_kng_fl, kng_rnk = get_file_n_rank(king_pos)
-                        while temp_kng_fl > 1 and left_dir:
-                            temp_kng_fl -= 1
-                            check_for_piece = get_square_index(file=temp_kng_fl, rank=kng_rnk)
-                            if board[check_for_piece][1] != 0:
-                                if board[check_for_piece][1] == 12 or board[check_for_piece][1] == 13:
-                                    legal_piece_moves.remove(en_passant_target)
-                                left_dir = False
-                        temp_kng_fl, kng_rnk = get_file_n_rank(king_pos)
-                        while temp_kng_fl < 8 and right_dir:
-                            temp_kng_fl += 1
-                            check_for_piece = get_square_index(file=temp_kng_fl, rank=kng_rnk)
-                            if board[check_for_piece][1] != 0:
-                                if board[check_for_piece][1] == 12 or board[check_for_piece][1] == 13:
-                                    legal_piece_moves.remove(en_passant_target)
-                                right_dir = False
-                        board[en_passant_target][1] = 0
-                        board[square][1] = 17
-                        board[en_passant_target + 8][1] = 9
-                temp_bp_fl = get_file_n_rank(bp_sqr)[0]
-                if board[bp_sqr][1] != 0 and bp_fl == temp_bp_fl:
-                    down = False
-                if board[bp_sqr][1] < 16 and board[bp_sqr][1] != 0 and bp_fl != temp_bp_fl:
-                    legal_piece_moves.append(bp_sqr)
-                if board[bp_sqr][1] == 0 and bp_fl == temp_bp_fl and down:
-                    legal_piece_moves.append(bp_sqr)
-            # For Piece pins
-            temp_hold = []
-            for bp_pin in pins:
-                if bp_pin[0] == square:
-                    for move in legal_piece_moves:
-                        if move in bp_pin[1]:
-                            temp_hold.append(move)
-                    legal_piece_moves = temp_hold
-            # For checks
-            if check:
-                temp_hold = []
-                for bp_resolve in legal_piece_moves:
-                    if bp_resolve in resolve_squares:
-                        temp_hold.append(bp_resolve)
-                legal_piece_moves = temp_hold
-            # For double checks
-            if doublecheck:
-                legal_piece_moves = []
-        # -----------------------------------------------------------------
-        if piece == 18:
-            for bn_sqr in possible_sqr[0][square]:
-                if board[bn_sqr][1] < 17 or board[bn_sqr][1] == 0:
-                    legal_piece_moves.append(bn_sqr)
-            # For Piece pins
-            temp_hold = []
-            for bn_pin in pins:
-                if bn_pin[0] == square:
-                    for move in legal_piece_moves:
-                        if move in bn_pin[1]:
-                            temp_hold.append(move)
-                    legal_piece_moves = temp_hold
-            # For checks
-            if check:
-                temp_hold = []
-                for bn_resolve in legal_piece_moves:
-                    if bn_resolve in resolve_squares:
-                        temp_hold.append(bn_resolve)
-                legal_piece_moves = temp_hold
-            # For double checks
-            if doublecheck:
-                legal_piece_moves = []
-        # -----------------------------------------------------------------
-        if piece == 19:
-            fl, rnk = get_file_n_rank(square)
-            right_up, left_up, left_down, right_down = True, True, True, True
-            for bb_sqr in possible_sqr[1][square]:
-                temp_fl, temp_rnk = get_file_n_rank(bb_sqr)
-                if board[bb_sqr][1] > 16 and board[bb_sqr][1] != 0:
-                    if temp_fl > fl and temp_rnk > rnk:
-                        right_up = False
-                    if temp_fl < fl and temp_rnk > rnk:
-                        left_up = False
-                    if temp_fl < fl and temp_rnk < rnk:
-                        left_down = False
-                    if temp_fl > fl and temp_rnk < rnk:
-                        right_down = False
-                if board[bb_sqr][1] <= 14 and board[bb_sqr][1] != 0:
-                    if right_up and temp_fl > fl and temp_rnk > rnk:
-                        legal_piece_moves.append(bb_sqr)
-                        right_up = False
-                    if left_up and temp_fl < fl and temp_rnk > rnk:
-                        legal_piece_moves.append(bb_sqr)
-                        left_up = False
-                    if left_down and temp_fl < fl and temp_rnk < rnk:
-                        legal_piece_moves.append(bb_sqr)
-                        left_down = False
-                    if right_down and temp_fl > fl and temp_rnk < rnk:
-                        legal_piece_moves.append(bb_sqr)
-                        right_down = False
-                if board[bb_sqr][1] == 0:
-                    if right_up and temp_fl > fl and temp_rnk > rnk:
-                        legal_piece_moves.append(bb_sqr)
-                    if left_up and temp_fl < fl and temp_rnk > rnk:
-                        legal_piece_moves.append(bb_sqr)
-                    if left_down and temp_fl < fl and temp_rnk < rnk:
-                        legal_piece_moves.append(bb_sqr)
-                    if right_down and temp_fl > fl and temp_rnk < rnk:
-                        legal_piece_moves.append(bb_sqr)
-            # For Piece pins
-            temp_hold = []
-            for bb_pin in pins:
-                if bb_pin[0] == square:
-                    for move in legal_piece_moves:
-                        if move in bb_pin[1]:
-                            temp_hold.append(move)
-                    legal_piece_moves = temp_hold
-            # For checks
-            if check:
-                temp_hold = []
-                for bb_resolve in legal_piece_moves:
-                    if bb_resolve in resolve_squares:
-                        temp_hold.append(bb_resolve)
-                legal_piece_moves = temp_hold
-            # For double checks
-            if doublecheck:
-                legal_piece_moves = []
-        # -----------------------------------------------------------------
-        if piece == 20:
-            fl, rnk = get_file_n_rank(square)
-            right, left, up, down = True, True, True, True
-            for br_sqr in possible_sqr[2][square]:
-                temp_fl, temp_rnk = get_file_n_rank(br_sqr)
-                if board[br_sqr][1] > 16 and board[br_sqr][1] != 0:
-                    if temp_fl > fl and temp_rnk == rnk:
-                        right = False
-                    if temp_fl == fl and temp_rnk > rnk:
-                        up = False
-                    if temp_fl < fl and temp_rnk == rnk:
-                        left = False
-                    if temp_fl == fl and temp_rnk < rnk:
-                        down = False
-                if board[br_sqr][1] <= 14 and board[br_sqr][1] != 0:
-                    if right and temp_fl > fl and temp_rnk == rnk:
-                        legal_piece_moves.append(br_sqr)
-                        right = False
-                    if up and temp_fl == fl and temp_rnk > rnk:
-                        legal_piece_moves.append(br_sqr)
-                        up = False
-                    if left and temp_fl < fl and temp_rnk == rnk:
-                        legal_piece_moves.append(br_sqr)
-                        left = False
-                    if down and temp_fl == fl and temp_rnk < rnk:
-                        legal_piece_moves.append(br_sqr)
-                        down = False
-                if board[br_sqr][1] == 0:
-                    if right and temp_fl > fl and temp_rnk == rnk:
-                        legal_piece_moves.append(br_sqr)
-                    if up and temp_fl == fl and temp_rnk > rnk:
-                        legal_piece_moves.append(br_sqr)
-                    if left and temp_fl < fl and temp_rnk == rnk:
-                        legal_piece_moves.append(br_sqr)
-                    if down and temp_fl == fl and temp_rnk < rnk:
-                        legal_piece_moves.append(br_sqr)
-            # For Piece pins
-            temp_hold = []
-            for br_pin in pins:
-                if br_pin[0] == square:
-                    for move in legal_piece_moves:
-                        if move in br_pin[1]:
-                            temp_hold.append(move)
-                    legal_piece_moves = temp_hold
-            # For checks
-            if check:
-                temp_hold = []
-                for br_resolve in legal_piece_moves:
-                    if br_resolve in resolve_squares:
-                        temp_hold.append(br_resolve)
-                legal_piece_moves = temp_hold
-            # For double checks
-            if doublecheck:
-                legal_piece_moves = []
-        # -----------------------------------------------------------------
-        if piece == 21:
-            fl, rnk = get_file_n_rank(square)
-            right_up, left_up, left_down, right_down = True, True, True, True
-            right, left, up, down = True, True, True, True
-            for bq_sqr in possible_sqr[3][square]:
-                temp_fl, temp_rnk = get_file_n_rank(bq_sqr)
-                if board[bq_sqr][1] > 16 and board[bq_sqr][1] != 0:
-                    if temp_fl > fl and temp_rnk > rnk:
-                        right_up = False
-                    if temp_fl < fl and temp_rnk > rnk:
-                        left_up = False
-                    if temp_fl < fl and temp_rnk < rnk:
-                        left_down = False
-                    if temp_fl > fl and temp_rnk < rnk:
-                        right_down = False
-                if board[bq_sqr][1] <= 14 and board[bq_sqr][1] != 0:
-                    if right_up and temp_fl > fl and temp_rnk > rnk:
-                        legal_piece_moves.append(bq_sqr)
-                        right_up = False
-                    if left_up and temp_fl < fl and temp_rnk > rnk:
-                        legal_piece_moves.append(bq_sqr)
-                        left_up = False
-                    if left_down and temp_fl < fl and temp_rnk < rnk:
-                        legal_piece_moves.append(bq_sqr)
-                        left_down = False
-                    if right_down and temp_fl > fl and temp_rnk < rnk:
-                        legal_piece_moves.append(bq_sqr)
-                        right_down = False
-                if board[bq_sqr][1] == 0:
-                    if right_up and temp_fl > fl and temp_rnk > rnk:
-                        legal_piece_moves.append(bq_sqr)
-                    if left_up and temp_fl < fl and temp_rnk > rnk:
-                        legal_piece_moves.append(bq_sqr)
-                    if left_down and temp_fl < fl and temp_rnk < rnk:
-                        legal_piece_moves.append(bq_sqr)
-                    if right_down and temp_fl > fl and temp_rnk < rnk:
-                        legal_piece_moves.append(bq_sqr)
-                if board[bq_sqr][1] > 16 and board[bq_sqr][1] != 0:
-                    if temp_fl > fl and temp_rnk == rnk:
-                        right = False
-                    if temp_fl == fl and temp_rnk > rnk:
-                        up = False
-                    if temp_fl < fl and temp_rnk == rnk:
-                        left = False
-                    if temp_fl == fl and temp_rnk < rnk:
-                        down = False
-                if board[bq_sqr][1] <= 14 and board[bq_sqr][1] != 0:
-                    if right and temp_fl > fl and temp_rnk == rnk:
-                        legal_piece_moves.append(bq_sqr)
-                        right = False
-                    if up and temp_fl == fl and temp_rnk > rnk:
-                        legal_piece_moves.append(bq_sqr)
-                        up = False
-                    if left and temp_fl < fl and temp_rnk == rnk:
-                        legal_piece_moves.append(bq_sqr)
-                        left = False
-                    if down and temp_fl == fl and temp_rnk < rnk:
-                        legal_piece_moves.append(bq_sqr)
-                        down = False
-                if board[bq_sqr][1] == 0:
-                    if right and temp_fl > fl and temp_rnk == rnk:
-                        legal_piece_moves.append(bq_sqr)
-                    if up and temp_fl == fl and temp_rnk > rnk:
-                        legal_piece_moves.append(bq_sqr)
-                    if left and temp_fl < fl and temp_rnk == rnk:
-                        legal_piece_moves.append(bq_sqr)
-                    if down and temp_fl == fl and temp_rnk < rnk:
-                        legal_piece_moves.append(bq_sqr)
-            # For Piece pins
-            temp_hold = []
-            for bq_pin in pins:
-                if bq_pin[0] == square:
-                    for move in legal_piece_moves:
-                        if move in bq_pin[1]:
-                            temp_hold.append(move)
-                    legal_piece_moves = temp_hold
-            # For checks
-            if check:
-                temp_hold = []
-                for bq_resolve in legal_piece_moves:
-                    if bq_resolve in resolve_squares:
-                        temp_hold.append(bq_resolve)
-                legal_piece_moves = temp_hold
-            # For double checks
-            if doublecheck:
-                legal_piece_moves = []
-        # -----------------------------------------------------------------
-        if piece == 22:
-            for bk_sqr in possible_sqr[4][square]:
-                if board[bk_sqr][1] < 16 or board[bk_sqr][1] == 0:
-                    if attacked[bk_sqr] == 0:
-                        legal_piece_moves.append(bk_sqr)
-    return legal_piece_moves
+def legal_white_knight_moves(square, in_check, pin_list, check_list=DEFAULT_tup):
+    leg = []
+    if not in_check:
+        for move in knight_moves[square]:
+            if 0 < board[move][1] <= 14:
+                continue
+            else:
+                leg.append(move)
+        for bit_board in pin_list[1]:
+            if bit_board[square] == "1":
+                leg = []
+                break
+    else:
+        pinned = False
+        for bit_board in pin_list[1]:
+            if bit_board[square] == "1":
+                pinned, leg = True, []
+                break
+        if not pinned:
+            for move in knight_moves[square]:
+                if check_list[move] == "1":
+                    leg.append(move)
+    return leg
+
+
+def legal_white_bishop_moves(square, in_check, pin_list, check_list=DEFAULT_tup):
+    leg = []
+    if not in_check:
+        for direction in bishop_moves[square]:
+            for move in direction:
+                leg.append(move)
+                if board[move][1] != 0:
+                    if board[move][1] <= 14:
+                        leg.remove(move)
+                    break
+        for bit_board in pin_list[2]:
+            if bit_board[square] == "1":
+                hold = []
+                for move in leg:
+                    if bit_board[move] == "1":
+                        hold.append(move)
+                leg = hold
+    else:
+        pinned = False
+        for bit_board in pin_list[2]:
+            if bit_board[square] == "1":
+                pinned, leg = True, []
+                break
+        if not pinned:
+            for direction in bishop_moves[square]:
+                for move in direction:
+                    if check_list[move] == "1":
+                        leg.append(move)
+                    if board[move][1] != 0:
+                        break
+    return leg
+
+
+def legal_white_rook_moves(square, in_check, pin_list, check_list=DEFAULT_tup):
+    leg = []
+    if not in_check:
+        for direction in rook_moves[square]:
+            for move in direction:
+                leg.append(move)
+                if board[move][1] != 0:
+                    if board[move][1] <= 14:
+                        leg.remove(move)
+                    break
+        for bit_board in pin_list[3]:
+            if bit_board[square] == "1":
+                hold = []
+                for move in leg:
+                    if bit_board[move] == "1":
+                        hold.append(move)
+                leg = hold
+    else:
+        pinned = False
+        for bit_board in pin_list[3]:
+            if bit_board[square] == "1":
+                pinned, leg = True, []
+                break
+        if not pinned:
+            for direction in rook_moves[square]:
+                for move in direction:
+                    if check_list[move] == "1":
+                        leg.append(move)
+                    if board[move][1] != 0:
+                        break
+    return leg
+
+
+def legal_white_queen_moves(square, in_check, pin_list, check_list=DEFAULT_tup):
+    leg = []
+    if not in_check:
+        for direction in queen_moves[square]:
+            for move in direction:
+                leg.append(move)
+                if board[move][1] != 0:
+                    if board[move][1] <= 14:
+                        leg.remove(move)
+                    break
+        for bit_board in pin_list[4]:
+            if bit_board[square] == "1":
+                hold = []
+                for move in leg:
+                    if bit_board[move] == "1":
+                        hold.append(move)
+                leg = hold
+    else:
+        pinned = False
+        for bit_board in pin_list[4]:
+            if bit_board[square] == "1":
+                pinned, leg = True, []
+                break
+        if not pinned:
+            for direction in queen_moves[square]:
+                for move in direction:
+                    if check_list[move] == "1":
+                        leg.append(move)
+                    if board[move][1] != 0:
+                        break
+    return leg
+
+
+def legal_white_king_moves(square, enemy_targets):
+    leg = []
+    for move in king_moves[square]:
+        if 14 > board[move][1] > 0:
+            continue
+        else:
+            if enemy_targets[move] == 0:
+                leg.append(move)
+    return leg
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+def legal_black_pawn_moves(square, in_check, pin_list, check_list=DEFAULT_tup):
+    leg = []
+    pinned = False
+    for move in black_pawn_moves[square][0]:
+        if (8 < board[move][1] < 15) or move == en_passant_target:
+            leg.append(move)
+    for move in black_pawn_moves[square][1]:
+        if board[move][1] != 0:
+            break
+        else:
+            leg.append(move)
+    for move in black_pawn_moves[square][2]:
+        if (8 < board[move][1] < 15) or move == en_passant_target:
+            leg.append(move)
+    for bit_board in pin_list[0]:
+        if bit_board[square] == "1":
+            pinned = True
+            hold = []
+            for move in leg:
+                if bit_board[move] == "1":
+                    hold.append(move)
+            leg = hold
+    # EN PASSANT DISCOVERED CHECK ON SELF FIX
+    if 23 < black_king_pos < 32:
+        if 15 < en_passant_target < 24:
+            for move in black_pawn_moves[square][0]:
+                if move == en_passant_target:
+                    board[square][1], board[move][1], board[move + 8][1] = 0, 17, 0
+                    for left_dir in rook_moves[black_king_pos][2]:
+                        if board[left_dir][1] != 0:
+                            if board[left_dir][1] == 12 or board[left_dir][1] == 13:
+                                leg.remove(move)
+                            break
+                    for right_dir in rook_moves[white_king_pos][0]:
+                        if board[right_dir][1] != 0:
+                            if board[right_dir][1] == 12 or board[right_dir][1] == 13:
+                                leg.remove(move)
+                            break
+                    board[square][1], board[move][1], board[move + 8][1] = 17, 0, 9
+    if in_check:
+        if pinned:
+            leg = []
+        else:
+            hold = []
+            for move in leg:
+                if check_list[move] == "1" or move == en_passant_target:
+                    hold.append(move)
+            leg = hold
+            # if a pawn causing a check can be captured en passant
+            if en_passant_target != DEFAULT_int:
+                for sqr in black_pawn_moves[black_king_pos][0]:
+                    if board[sqr][1] == 9 and en_passant_target == (sqr - 8):
+                        leg.append(en_passant_target)
+                for sqr in black_pawn_moves[black_king_pos][2]:
+                    if board[sqr][1] == 9 and en_passant_target == (sqr - 8):
+                        leg.append(en_passant_target)
+    return leg
+
+
+def legal_black_knight_moves(square, in_check, pin_list, check_list=DEFAULT_tup):
+    leg = []
+    if not in_check:
+        for move in knight_moves[square]:
+            if board[move][1] > 16:
+                continue
+            else:
+                leg.append(move)
+        for bit_board in pin_list[1]:
+            if bit_board[square] == "1":
+                leg = []
+                break
+    else:
+        pinned = False
+        for bit_board in pin_list[1]:
+            if bit_board[square] == "1":
+                pinned, leg = True, []
+                break
+        if not pinned:
+            for move in knight_moves[square]:
+                if check_list[move] == "1":
+                    leg.append(move)
+    return leg
+
+
+def legal_black_bishop_moves(square, in_check, pin_list, check_list=DEFAULT_tup):
+    leg = []
+    if not in_check:
+        for direction in bishop_moves[square]:
+            for move in direction:
+                leg.append(move)
+                if board[move][1] != 0:
+                    if board[move][1] > 16:
+                        leg.remove(move)
+                    break
+        for bit_board in pin_list[2]:
+            if bit_board[square] == "1":
+                hold = []
+                for move in leg:
+                    if bit_board[move] == "1":
+                        hold.append(move)
+                leg = hold
+    else:
+        pinned = False
+        for bit_board in pin_list[2]:
+            if bit_board[square] == "1":
+                pinned, leg = True, []
+                break
+        if not pinned:
+            for direction in bishop_moves[square]:
+                for move in direction:
+                    if check_list[move] == "1":
+                        leg.append(move)
+                    if board[move][1] != 0:
+                        break
+    return leg
+
+
+def legal_black_rook_moves(square, in_check, pin_list, check_list=DEFAULT_tup):
+    leg = []
+    if not in_check:
+        for direction in rook_moves[square]:
+            for move in direction:
+                leg.append(move)
+                if board[move][1] != 0:
+                    if board[move][1] > 16:
+                        leg.remove(move)
+                    break
+        for bit_board in pin_list[3]:
+            if bit_board[square] == "1":
+                hold = []
+                for move in leg:
+                    if bit_board[move] == "1":
+                        hold.append(move)
+                leg = hold
+    else:
+        pinned = False
+        for bit_board in pin_list[3]:
+            if bit_board[square] == "1":
+                pinned, leg = True, []
+                break
+        if not pinned:
+            for direction in rook_moves[square]:
+                for move in direction:
+                    if check_list[move] == "1":
+                        leg.append(move)
+                    if board[move][1] != 0:
+                        break
+    return leg
+
+
+def legal_black_queen_moves(square, in_check, pin_list, check_list=DEFAULT_tup):
+    leg = []
+    if not in_check:
+        for direction in queen_moves[square]:
+            for move in direction:
+                leg.append(move)
+                if board[move][1] != 0:
+                    if board[move][1] > 16:
+                        leg.remove(move)
+                    break
+        for bit_board in pin_list[4]:
+            if bit_board[square] == "1":
+                hold = []
+                for move in leg:
+                    if bit_board[move] == "1":
+                        hold.append(move)
+                leg = hold
+    else:
+        pinned = False
+        for bit_board in pin_list[4]:
+            if bit_board[square] == "1":
+                pinned, leg = True, []
+                break
+        if not pinned:
+            for direction in queen_moves[square]:
+                for move in direction:
+                    if check_list[move] == "1":
+                        leg.append(move)
+                    if board[move][1] != 0:
+                        break
+    return leg
+
+
+def legal_black_king_moves(square, enemy_targets):
+    leg = []
+    for move in king_moves[square]:
+        if board[move][1] > 16:
+            continue
+        else:
+            if enemy_targets[move] == 0:
+                leg.append(move)
+    return leg
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def pawn_to_promote():
+    global turn_to_move
     for sqr in range(64):
         if (sqr in range(0, 8)) or (sqr in range(56, 64)):
-            if board[sqr][1] == 9 or board[sqr][1] == 17:
+            if board[sqr][1] == 9:
+                return True
+            if board[sqr][1] == 17:
                 return True
     return False
 
@@ -2026,12 +1723,14 @@ def can_castle():
     w_q_side, w_k_side = [1, 2, 3], [5, 6]
     b_q_side, b_k_side = [57, 58, 59], [61, 62]
     attacked, check, double = attacked_squares(), False, False
-    if attacked[king_pos] != 0:
-        if attacked[king_pos] == 1:
-            check = True
-        else:
-            double = True
+
     if turn_to_move == "w":
+        if attacked[white_king_pos] != 0:
+            if attacked[white_king_pos] == 1:
+                check = True
+            else:
+                double = True
+
         if not castle_conditions["w_k_moved"]:
             if not check and not double:
                 if not castle_conditions["w_q_r_moved"]:
@@ -2046,7 +1745,12 @@ def can_castle():
                         if board[sqr][1] != 0 or attacked[sqr] != 0:
                             temp_hold = False
                     king_side = temp_hold
-    if turn_to_move == "b":
+    else:
+        if attacked[black_king_pos] != 0:
+            if attacked[black_king_pos] == 1:
+                check = True
+            else:
+                double = True
         if not castle_conditions["b_k_moved"]:
             if not check and not double:
                 if not castle_conditions["b_q_r_moved"]:
@@ -2066,7 +1770,6 @@ def can_castle():
 
 def castle_king(side):
     global board
-    global turn_to_move
     if turn_to_move == "w":
         if side == "king side":
             board[6][1] = 14
@@ -2100,68 +1803,561 @@ def switch_turn():
         turn_to_move = "w"
 
 
+def set_en_passant(from_sqr, to_sqr):
+    global en_passant_target
+    if from_sqr < 16:
+        en_passant_target = to_sqr - 8
+    else:
+        en_passant_target = to_sqr + 8
+
+
 # When using saved mouse positions as input make sure to reset them after the piece is moved
 def move_piece():
-    from_index = get_square_index(mouse_clicked_on)
-    to_index = get_square_index(mouse_unclicked_on)
-    global board
-    global turn_to_move
-    global en_passant_target
-    from_file, from_rank = get_file_n_rank(from_index)
-    to_file, to_rank = get_file_n_rank(to_index)
-    q_side_castle, k_side_castle = can_castle()
-
     # Do not move anything if there is a pawn on the back ranks
     if not pawn_to_promote():
-        # Checking if a piece occupies the starting square
+        global board
+        global en_passant_target
+        from_index = get_square_index(mouse_clicked_on)
+        to_index = get_square_index(mouse_unclicked_on)
         piece = board[from_index][1]
-        if piece != 0:
-            # Checking if move is legal
-            if to_index in legal_moves(from_index, board[from_index][1]):
-                # Implementation of en passant capture
-                if to_index == en_passant_target:
-                    if piece == 9:
-                        board[en_passant_target - 8][1] = 0
-                    if piece == 17:
-                        board[en_passant_target + 8][1] = 0
-                # Set En passant target square
-                if (piece == 9) and (to_rank == from_rank + 2) or (piece == 17) and (to_rank == from_rank - 2):
-                    if (piece == 9) and (to_rank == from_rank + 2):
-                        en_passant_target = get_square_index(file=from_file, rank=from_rank + 1)
-                    if (piece == 17) and (to_rank == from_rank - 2):
-                        en_passant_target = get_square_index(file=from_file, rank=from_rank - 1)
+        attacked = attacked_squares()
+        check, doublecheck = False, False
+        pins = pin_n_check_resolves(False)
+        moved = False
+        double_pawn_push = False
+        check_resolve = ""
+        queen_side, king_side = can_castle()
+
+        # -----------------------------------------------------------------------------------
+
+        if turn_to_move == "w":
+            if attacked[white_king_pos] == 1:
+                check = True
+                pins, check_resolve = pin_n_check_resolves(True)
+            if attacked[white_king_pos] > 1:
+                doublecheck = True
+
+            if board[from_index][1] != 0:
+                if piece == 9 and not doublecheck:
+                    if to_index in legal_white_pawn_moves(from_index, check, pins, check_resolve):
+                        if abs(from_index - to_index) == 16:
+                            double_pawn_push = True
+                        if to_index == en_passant_target:
+                            board[to_index - 8][1] = 0
+                        board[from_index][1] = 0
+                        board[to_index][1] = 9
+                        moved = True
+                        switch_turn()
+                if piece == 10 and not doublecheck:
+                    if to_index in legal_white_knight_moves(from_index, check, pins, check_resolve):
+                        board[from_index][1] = 0
+                        board[to_index][1] = 10
+                        moved = True
+                        switch_turn()
+                if piece == 11 and not doublecheck:
+                    if to_index in legal_white_bishop_moves(from_index, check, pins, check_resolve):
+                        board[from_index][1] = 0
+                        board[to_index][1] = 11
+                        moved = True
+                        switch_turn()
+                if piece == 12 and not doublecheck:
+                    if to_index in legal_white_rook_moves(from_index, check, pins, check_resolve):
+                        board[from_index][1] = 0
+                        board[to_index][1] = 12
+                        moved = True
+                        switch_turn()
+                if piece == 13 and not doublecheck:
+                    if to_index in legal_white_queen_moves(from_index, check, pins, check_resolve):
+                        board[from_index][1] = 0
+                        board[to_index][1] = 13
+                        moved = True
+                        switch_turn()
+                if piece == 14:
+                    if to_index in legal_white_king_moves(from_index, attacked):
+                        board[from_index][1] = 0
+                        board[to_index][1] = 14
+                        moved = True
+                        switch_turn()
+                    if (to_index in [6, 7]) and king_side:
+                        castle_king("king side")
+                        moved = True
+                        switch_turn()
+                    if (to_index in [0, 2]) and queen_side:
+                        castle_king("queen side")
+                        moved = True
+                        switch_turn()
+        # -----------------------------------------------------------------------------------
+        else:
+            if attacked[black_king_pos] == 1:
+                check = True
+                pins, check_resolve = pin_n_check_resolves(True)
+            if attacked[black_king_pos] > 1:
+                doublecheck = True
+
+            if board[from_index][1] != 0:
+                if piece == 17 and not doublecheck:
+                    if to_index in legal_black_pawn_moves(from_index, check, pins, check_resolve):
+                        if abs(from_index - to_index) == 16:
+                            double_pawn_push = True
+                        if to_index == en_passant_target:
+                            board[to_index + 8][1] = 0
+                        board[from_index][1] = 0
+                        board[to_index][1] = 17
+                        moved = True
+                        switch_turn()
+                if piece == 18 and not doublecheck:
+                    if to_index in legal_black_knight_moves(from_index, check, pins, check_resolve):
+                        board[from_index][1] = 0
+                        board[to_index][1] = 18
+                        moved = True
+                        switch_turn()
+                if piece == 19 and not doublecheck:
+                    if to_index in legal_black_bishop_moves(from_index, check, pins, check_resolve):
+                        board[from_index][1] = 0
+                        board[to_index][1] = 19
+                        moved = True
+                        switch_turn()
+                if piece == 20 and not doublecheck:
+                    if to_index in legal_black_rook_moves(from_index, check, pins, check_resolve):
+                        board[from_index][1] = 0
+                        board[to_index][1] = 20
+                        moved = True
+                        switch_turn()
+                if piece == 21 and not doublecheck:
+                    if to_index in legal_black_queen_moves(from_index, check, pins, check_resolve):
+                        board[from_index][1] = 0
+                        board[to_index][1] = 21
+                        moved = True
+                        switch_turn()
+                if piece == 22:
+                    if to_index in legal_black_king_moves(from_index, attacked):
+                        board[from_index][1] = 0
+                        board[to_index][1] = 22
+                        moved = True
+                        switch_turn()
+                    if (to_index in [62, 63]) and king_side:
+                        castle_king("king side")
+                        moved = True
+                        switch_turn()
+                    if (to_index in [56, 58]) and queen_side:
+                        castle_king("queen side")
+                        moved = True
+                        switch_turn()
+        if moved:
+            if double_pawn_push:
+                pass
+            else:
+                en_passant_target = DEFAULT_int
+
+
+# AI stuff begins ------------------------------------------------------------------------------------------------------
+def evaluation():
+    white_material = 0
+    white_material += len(white_occupancy[0])
+    white_material += len(white_occupancy[1]) * 3
+    white_material += len(white_occupancy[2]) * 3
+    white_material += len(white_occupancy[3]) * 5
+    white_material += len(white_occupancy[4]) * 9
+    black_material = 0
+    black_material += len(black_occupancy[0])
+    black_material += len(black_occupancy[1]) * 3
+    black_material += len(black_occupancy[2]) * 3
+    black_material += len(black_occupancy[3]) * 5
+    black_material += len(black_occupancy[4]) * 9
+    return white_material - black_material
+
+
+def search(depth):
+    if depth == 0:
+        return evaluation()
+    global turn_to_move, board, white_occupancy, black_occupancy, white_king_pos, black_king_pos, en_passant_target
+    attacked = attacked_squares()
+    best_move = ""
+    if turn_to_move == "w":
+        best_eval = -1000
+        # --------------------------------------------------
+        # --------------------------------------------------
+        if attacked[white_king_pos] == 1:
+            check = True
+            pins, check_resolve = pin_n_check_resolves(True)
+        else:
+            check = False
+            pins = pin_n_check_resolves(False)
+            check_resolve = ""
+        if attacked[white_king_pos] > 1:
+            doublecheck = True
+        else:
+            doublecheck = False
+        # --------------------------------------------------
+        # --------------------------------------------------
+        if not doublecheck:
+            previous_occupancy_state = copy.deepcopy(white_occupancy[0])
+            for p in previous_occupancy_state:
+                if 47 < p < 56:
+                    for move in legal_white_pawn_moves(p, check, pins, check_resolve):
+                        for promotion in range(10, 14):
+                            previously_occupied_by = board[move][1]
+
+                            board[move][1] = promotion
+                            board[p][1] = 0
+                            white_occupancy[0].remove(p)
+                            white_occupancy[segment_map[promotion]].append(move)
+                            if previously_occupied_by != 0:
+                                black_occupancy[segment_map[previously_occupied_by]].remove(move)
+                            turn_to_move = "b"
+
+                            evaluate = search(depth - 1)
+                            if evaluate > best_eval:
+                                best_move = [p, move, promotion]
+                            best_eval = max(evaluate, best_eval)
+
+                            board[move][1] = previously_occupied_by
+                            board[p][1] = 9
+                            white_occupancy[segment_map[promotion]].remove(move)
+                            white_occupancy[0].append(p)
+                            if previously_occupied_by != 0:
+                                black_occupancy[segment_map[previously_occupied_by]].append(move)
                 else:
-                    en_passant_target = DEFAULT_int
-                # --------------------------------------------------------------------
+                    for move in legal_white_pawn_moves(p, check, pins, check_resolve):
+                        previously_occupied_by = board[move][1]
 
-                # Making move by replacing piece on chosen square
-                board[to_index] = [to_index, piece]
-                board[from_index][1] = 0
-                # Switching player turn
-                switch_turn()
-            # Implementation of castling
-            if turn_to_move == "w":
-                if k_side_castle and from_index == 4 and (to_index == 6 or to_index == 7):
-                    castle_king("king side")
-                    switch_turn()
-                    en_passant_target = DEFAULT_int
-                if q_side_castle and from_index == 4 and (to_index == 2 or to_index == 0):
-                    castle_king("queen side")
-                    switch_turn()
-                    en_passant_target = DEFAULT_int
-            if turn_to_move == "b":
-                if k_side_castle and from_index == 60 and (to_index == 62 or to_index == 63):
-                    castle_king("king side")
-                    switch_turn()
-                    en_passant_target = DEFAULT_int
-                if q_side_castle and from_index == 60 and (to_index == 58 or to_index == 56):
-                    castle_king("queen side")
-                    switch_turn()
-                    en_passant_target = DEFAULT_int
+                        board[move][1] = 9
+                        board[p][1] = 0
+                        white_occupancy[0].remove(p)
+                        white_occupancy[0].append(move)
+                        if previously_occupied_by != 0:
+                            black_occupancy[segment_map[previously_occupied_by]].remove(move)
+                        turn_to_move = "b"
+
+                        evaluate = search(depth - 1)
+                        if evaluate > best_eval:
+                            best_move = [p, move]
+                        best_eval = max(evaluate, best_eval)
+
+                        board[move][1] = previously_occupied_by
+                        board[p][1] = 9
+                        white_occupancy[0].remove(move)
+                        white_occupancy[0].append(p)
+                        if previously_occupied_by != 0:
+                            black_occupancy[segment_map[previously_occupied_by]].append(move)
+            previous_occupancy_state = copy.deepcopy(white_occupancy[1])
+            for n in previous_occupancy_state:
+                for move in legal_white_knight_moves(n, check, pins, check_resolve):
+                    previously_occupied_by = board[move][1]
+
+                    board[move][1] = 10
+                    board[n][1] = 0
+                    white_occupancy[1].remove(n)
+                    white_occupancy[1].append(move)
+                    if previously_occupied_by != 0:
+                        black_occupancy[segment_map[previously_occupied_by]].remove(move)
+                    turn_to_move = "b"
+
+                    evaluate = search(depth - 1)
+                    if evaluate > best_eval:
+                        best_move = [n, move]
+                    best_eval = max(evaluate, best_eval)
+
+                    board[move][1] = previously_occupied_by
+                    board[n][1] = 10
+                    white_occupancy[1].remove(move)
+                    white_occupancy[1].append(n)
+                    if previously_occupied_by != 0:
+                        black_occupancy[segment_map[previously_occupied_by]].append(move)
+            previous_occupancy_state = copy.deepcopy(white_occupancy[2])
+            for b in previous_occupancy_state:
+                for move in legal_white_bishop_moves(b, check, pins, check_resolve):
+                    previously_occupied_by = board[move][1]
+
+                    board[move][1] = 11
+                    board[b][1] = 0
+                    white_occupancy[2].remove(b)
+                    white_occupancy[2].append(move)
+                    if previously_occupied_by != 0:
+                        black_occupancy[segment_map[previously_occupied_by]].remove(move)
+                    turn_to_move = "b"
+
+                    evaluate = search(depth - 1)
+                    if evaluate > best_eval:
+                        best_move = [b, move]
+                    best_eval = max(evaluate, best_eval)
+
+                    board[move][1] = previously_occupied_by
+                    board[b][1] = 11
+                    white_occupancy[2].remove(move)
+                    white_occupancy[2].append(b)
+                    if previously_occupied_by != 0:
+                        black_occupancy[segment_map[previously_occupied_by]].append(move)
+            previous_occupancy_state = copy.deepcopy(white_occupancy[3])
+            for r in previous_occupancy_state:
+                for move in legal_white_rook_moves(r, check, pins, check_resolve):
+                    previously_occupied_by = board[move][1]
+
+                    board[move][1] = 12
+                    board[r][1] = 0
+                    white_occupancy[3].remove(r)
+                    white_occupancy[3].append(move)
+                    if previously_occupied_by != 0:
+                        black_occupancy[segment_map[previously_occupied_by]].remove(move)
+                    turn_to_move = "b"
+
+                    evaluate = search(depth - 1)
+                    if evaluate > best_eval:
+                        best_move = [r, move]
+                    best_eval = max(evaluate, best_eval)
+
+                    board[move][1] = previously_occupied_by
+                    board[r][1] = 12
+                    white_occupancy[3].remove(move)
+                    white_occupancy[3].append(r)
+                    if previously_occupied_by != 0:
+                        black_occupancy[segment_map[previously_occupied_by]].append(move)
+            previous_occupancy_state = copy.deepcopy(white_occupancy[4])
+            for q in previous_occupancy_state:
+                for move in legal_white_queen_moves(q, check, pins, check_resolve):
+                    previously_occupied_by = board[move][1]
+
+                    board[move][1] = 13
+                    board[q][1] = 0
+                    white_occupancy[4].remove(q)
+                    white_occupancy[4].append(move)
+                    if previously_occupied_by != 0:
+                        black_occupancy[segment_map[previously_occupied_by]].remove(move)
+                    turn_to_move = "b"
+
+                    evaluate = search(depth - 1)
+                    if evaluate > best_eval:
+                        best_move = [q, move]
+                    best_eval = max(evaluate, best_eval)
+
+                    board[move][1] = previously_occupied_by
+                    board[q][1] = 13
+                    white_occupancy[4].remove(move)
+                    white_occupancy[4].append(q)
+                    if previously_occupied_by != 0:
+                        black_occupancy[segment_map[previously_occupied_by]].append(move)
+        for k in white_occupancy[5]:
+            for move in legal_white_king_moves(k, attacked):
+                previously_occupied_by = board[move][1]
+
+                white_king_pos = move
+
+                board[move][1] = 14
+                board[k][1] = 0
+                white_occupancy[5] = [move]
+                if previously_occupied_by != 0:
+                    black_occupancy[segment_map[previously_occupied_by]].remove(move)
+                turn_to_move = "b"
+
+                evaluate = search(depth - 1)
+                if evaluate > best_eval:
+                    best_move = [k, move]
+                best_eval = max(evaluate, best_eval)
+
+                white_king_pos = k
+
+                board[move][1] = previously_occupied_by
+                board[k][1] = 14
+                white_occupancy[5] = [k]
+                if previously_occupied_by != 0:
+                    black_occupancy[segment_map[previously_occupied_by]].append(move)
+    else:
+        best_eval = 1000
+        # --------------------------------------------------
+        # --------------------------------------------------
+        if attacked[black_king_pos] == 1:
+            check = True
+            pins, check_resolve = pin_n_check_resolves(True)
+        else:
+            check = False
+            pins = pin_n_check_resolves(False)
+            check_resolve = ""
+        if attacked[black_king_pos] > 1:
+            doublecheck = True
+        else:
+            doublecheck = False
+        # --------------------------------------------------
+        # --------------------------------------------------
+        if not doublecheck:
+            previous_occupancy_state = copy.deepcopy(black_occupancy[0])
+            for p in previous_occupancy_state:
+                if 7 < p < 16:
+                    for move in legal_black_pawn_moves(p, check, pins, check_resolve):
+                        for promotion in range(18, 22):
+                            previously_occupied_by = board[move][1]
+
+                            board[move][1] = promotion
+                            board[p][1] = 0
+                            black_occupancy[0].remove(p)
+                            black_occupancy[segment_map[promotion]].append(move)
+                            if previously_occupied_by != 0:
+                                white_occupancy[segment_map[previously_occupied_by]].remove(move)
+                            turn_to_move = "w"
+
+                            evaluate = search(depth - 1)
+                            if evaluate < best_eval:
+                                best_move = [p, move, promotion]
+                            best_eval = min(evaluate, best_eval)
+
+                            board[move][1] = previously_occupied_by
+                            board[p][1] = 17
+                            black_occupancy[segment_map[promotion]].remove(move)
+                            black_occupancy[0].append(p)
+                            if previously_occupied_by != 0:
+                                white_occupancy[segment_map[previously_occupied_by]].append(move)
+                else:
+                    for move in legal_black_pawn_moves(p, check, pins, check_resolve):
+                        previously_occupied_by = board[move][1]
+
+                        board[move][1] = 17
+                        board[p][1] = 0
+                        black_occupancy[0].remove(p)
+                        black_occupancy[0].append(move)
+                        if previously_occupied_by != 0:
+                            white_occupancy[segment_map[previously_occupied_by]].remove(move)
+                        turn_to_move = "w"
+
+                        evaluate = search(depth - 1)
+                        if evaluate < best_eval:
+                            best_move = [p, move]
+                        best_eval = min(evaluate, best_eval)
+
+                        board[move][1] = previously_occupied_by
+                        board[p][1] = 17
+                        black_occupancy[0].remove(move)
+                        black_occupancy[0].append(p)
+                        if previously_occupied_by != 0:
+                            white_occupancy[segment_map[previously_occupied_by]].append(move)
+            previous_occupancy_state = copy.deepcopy(black_occupancy[1])
+            for n in previous_occupancy_state:
+                for move in legal_black_knight_moves(n, check, pins, check_resolve):
+                    previously_occupied_by = board[move][1]
+
+                    board[move][1] = 18
+                    board[n][1] = 0
+                    black_occupancy[1].remove(n)
+                    black_occupancy[1].append(move)
+                    if previously_occupied_by != 0:
+                        white_occupancy[segment_map[previously_occupied_by]].remove(move)
+                    turn_to_move = "w"
+
+                    evaluate = search(depth - 1)
+                    if evaluate < best_eval:
+                        best_move = [n, move]
+                    best_eval = min(evaluate, best_eval)
+
+                    board[move][1] = previously_occupied_by
+                    board[n][1] = 18
+                    black_occupancy[1].remove(move)
+                    black_occupancy[1].append(n)
+                    if previously_occupied_by != 0:
+                        white_occupancy[segment_map[previously_occupied_by]].append(move)
+            previous_occupancy_state = copy.deepcopy(black_occupancy[2])
+            for b in previous_occupancy_state:
+                for move in legal_black_bishop_moves(b, check, pins, check_resolve):
+                    previously_occupied_by = board[move][1]
+
+                    board[move][1] = 19
+                    board[b][1] = 0
+                    black_occupancy[2].remove(b)
+                    black_occupancy[2].append(move)
+                    if previously_occupied_by != 0:
+                        white_occupancy[segment_map[previously_occupied_by]].remove(move)
+                    turn_to_move = "w"
+
+                    evaluate = search(depth - 1)
+                    if evaluate < best_eval:
+                        best_move = [b, move]
+                    best_eval = min(evaluate, best_eval)
+
+                    board[move][1] = previously_occupied_by
+                    board[b][1] = 19
+                    black_occupancy[2].remove(move)
+                    black_occupancy[2].append(b)
+                    if previously_occupied_by != 0:
+                        white_occupancy[segment_map[previously_occupied_by]].append(move)
+            previous_occupancy_state = copy.deepcopy(black_occupancy[3])
+            for r in previous_occupancy_state:
+                for move in legal_black_rook_moves(r, check, pins, check_resolve):
+                    previously_occupied_by = board[move][1]
+
+                    board[move][1] = 20
+                    board[r][1] = 0
+                    black_occupancy[3].remove(r)
+                    black_occupancy[3].append(move)
+                    if previously_occupied_by != 0:
+                        white_occupancy[segment_map[previously_occupied_by]].remove(move)
+                    turn_to_move = "w"
+
+                    evaluate = search(depth - 1)
+                    if evaluate < best_eval:
+                        best_move = [r, move]
+                    best_eval = min(evaluate, best_eval)
+
+                    board[move][1] = previously_occupied_by
+                    board[r][1] = 20
+                    black_occupancy[3].remove(move)
+                    black_occupancy[3].append(r)
+                    if previously_occupied_by != 0:
+                        white_occupancy[segment_map[previously_occupied_by]].append(move)
+            previous_occupancy_state = copy.deepcopy(black_occupancy[4])
+            for q in previous_occupancy_state:
+                for move in legal_black_queen_moves(q, check, pins, check_resolve):
+                    previously_occupied_by = board[move][1]
+
+                    board[move][1] = 21
+                    board[q][1] = 0
+                    black_occupancy[4].remove(q)
+                    black_occupancy[4].append(move)
+                    if previously_occupied_by != 0:
+                        white_occupancy[segment_map[previously_occupied_by]].remove(move)
+                    turn_to_move = "w"
+
+                    evaluate = search(depth - 1)
+                    if evaluate < best_eval:
+                        best_move = [q, move]
+                    best_eval = min(evaluate, best_eval)
+
+                    board[move][1] = previously_occupied_by
+                    board[q][1] = 21
+                    black_occupancy[4].remove(move)
+                    black_occupancy[4].append(q)
+                    if previously_occupied_by != 0:
+                        white_occupancy[segment_map[previously_occupied_by]].append(move)
+        for k in black_occupancy[5]:
+            for move in legal_black_king_moves(k, attacked):
+                previously_occupied_by = board[move][1]
+
+                black_king_pos = move
+
+                board[move][1] = 22
+                board[k][1] = 0
+                black_occupancy[5] = [move]
+                if previously_occupied_by != 0:
+                    white_occupancy[segment_map[previously_occupied_by]].remove(move)
+                turn_to_move = "w"
+
+                evaluate = search(depth - 1)
+                if evaluate < best_eval:
+                    best_move = [k, move]
+                best_eval = min(evaluate, best_eval)
+
+                black_king_pos = k
+
+                board[move][1] = previously_occupied_by
+                board[k][1] = 22
+                black_occupancy[5] = [k]
+                if previously_occupied_by != 0:
+                    white_occupancy[segment_map[previously_occupied_by]].append(move)
+    if depth == 4:
+        return best_move
+    else:
+        return best_eval
 
 
-# Main loop variables ----------------------------------------
-king_pos = DEFAULT_int
+# Main loop variables --------------------------------------------------------------------------------------------------
+white_king_pos = DEFAULT_int
+black_king_pos = DEFAULT_int
 turn_to_move = "w"
 en_passant_target = DEFAULT_int
 # ------------------------------------------------------------
@@ -2172,42 +2368,77 @@ mouse_clicked_on = DEFAULT_tup
 mouse_unclicked_on = DEFAULT_tup
 
 # Generating the possible squares a piece can move to before the Main loop
-possible_sqr = piece_possible_squares()
+initialize_white_pawn_moves()
+initialize_black_pawn_moves()
+initialize_knight_moves()
+initialize_bishop_moves()
+initialize_rook_moves()
+initialize_queen_moves()
+initialize_king_moves()
 
 # Booleans determining whether the king or relative rooks have moved for castling
 castle_conditions = {"w_k_moved": False, "w_q_r_moved": False, "w_k_r_moved": False,
                      "b_k_moved": False, "b_q_r_moved": False, "b_k_r_moved": False}
 
+AI_to_move = False
 while True:  # main loop
     window.fill((31, 31, 31))
     # Load Starting FEN once ---------------------------------
-    while fen_load:
+    if fen_load:
         load_fen()
+        previous_board_state = copy.deepcopy(board)
         fen_load = False
-
-    # In loop upper precedence variables ---------------------
-    update_king_position()
-    occupied_square = get_occupied_squares()
-    keep_mouse_boundary()
 
     # Choosing promotion if there is one to be made by a Human Player
     if pawn_to_promote():
         promote_pawn(mouse_clicked_on, mouse_unclicked_on)
 
+    # In loop upper precedence variables ---------------------
+    update_king_position()
+    initialize_white_occupancy()
+    initialize_black_occupancy()
+    keep_mouse_boundary()
+
     # Checking if the relevant pieces have moved to prevent castling
     update_castle_rights()
 
-    # Drag and drop implementation of piece movement
-    if not picked and mouse_clicked_on != DEFAULT_tup and mouse_unclicked_on != DEFAULT_tup:
-        move_piece()
-        mouse_clicked_on, mouse_unclicked_on = DEFAULT_tup, DEFAULT_tup
+    if AI_to_move and not pawn_to_promote():
+        t = time.time()
+        previous_board_state = copy.deepcopy(board)
+        optimal_move = search(4)
+        if len(optimal_move) == 2:
+            home_square, new_square = optimal_move[0], optimal_move[1]
+            board[new_square][1] = board[home_square][1]
+            board[home_square][1] = 0
+        if len(optimal_move) == 3:
+            home_square, new_square, promoted = optimal_move[0], optimal_move[1], optimal_move[2]
+            board[new_square][1] = promoted
+            board[home_square][1] = 0
+        AI_to_move = False
+        if previous_board_state != board:
+            turn_to_move = "w"
+        t = time.time() - t
+        if t < 61:
+            print("That took", t, "seconds.")
+        else:
+            print("That took", int(t // 60), "minutes and", int((t / 60 - t // 60) * 60), "seconds.")
 
+    # Drag and drop implementation of piece movement
+    if not picked and mouse_clicked_on != DEFAULT_tup and mouse_unclicked_on != DEFAULT_tup and not AI_to_move:
+        previous_board_state = copy.deepcopy(board)
+        move_piece()
+        if previous_board_state != board:
+            AI_to_move = True
+
+        mouse_clicked_on, mouse_unclicked_on = DEFAULT_tup, DEFAULT_tup
     # Draw game objects ---------------------------------------------
     draw_board()
     render_pieces(get_square_index(mouse_clicked_on))
-
     for event in pygame.event.get():
         if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == KEYDOWN and event.key == K_ESCAPE:
             pygame.quit()
             sys.exit()
         if event.type == MOUSEBUTTONDOWN:
